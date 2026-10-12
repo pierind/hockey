@@ -190,6 +190,15 @@ section > .help-section { background: var(--surface); border: 1px solid var(--li
 .stats tbody tr:hover > .cell[style] { background: inherit; }
 .heat .total { min-width: 220px; }
 
+/* Coaches board, tuned for iPad: big targets, no scroll/zoom/selection while drawing, rink fills the screen */
+.board { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.board-tools { position: sticky; top: 0; z-index: 2; background: var(--ice); padding: 4px 0 10px; }
+.board-tools h2 { margin: 0 6px 0 0; }
+.board-tools button, .board-tools select { min-height: 44px; min-width: 44px; touch-action: manipulation; font-size: 1rem; }
+.pen-dot { display: inline-block; width: 22px; height: 22px; border-radius: 50%; vertical-align: middle; }
+.board-canvas { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 8px; }
+.board-canvas svg { touch-action: none; max-height: calc(100dvh - 170px); cursor: crosshair; }
+
 .print-only { display: none; }
 
 @media (max-width: 1100px) {

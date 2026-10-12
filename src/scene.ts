@@ -34,11 +34,11 @@ export const updateItem = (s: Scene, id: string, fn: (it: Item) => Item): Scene 
 })
 
 // Undo/redo keeps whole scenes; the editor commits once per finished gesture, not per pointer sample.
-export type History = { past: Scene[]; present: Scene; future: Scene[] }
-export const initHistory = (present: Scene): History => ({ past: [], present, future: [] })
-export const commit = (h: History, s: Scene): History =>
+export type History<T = Scene> = { past: T[]; present: T; future: T[] }
+export const initHistory = <T>(present: T): History<T> => ({ past: [], present, future: [] })
+export const commit = <T>(h: History<T>, s: T): History<T> =>
   s === h.present ? h : { past: [...h.past, h.present], present: s, future: [] }
-export const undo = (h: History): History =>
+export const undo = <T>(h: History<T>): History<T> =>
   h.past.length ? { past: h.past.slice(0, -1), present: h.past[h.past.length - 1], future: [h.present, ...h.future] } : h
-export const redo = (h: History): History =>
+export const redo = <T>(h: History<T>): History<T> =>
   h.future.length ? { past: [...h.past, h.present], present: h.future[0], future: h.future.slice(1) } : h
