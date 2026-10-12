@@ -82,6 +82,18 @@ const HELP = {
       </ul>
     ),
   },
+  board: {
+    title: 'Taktiktafel',
+    body: (
+      <ul>
+        <li>Freie Tafel zum schnellen Aufzeichnen, z. B. im Timeout oder bei einer Besprechung. Sie ist unabhängig von den Übungen und nicht Teil des Backups; der Inhalt bleibt aber nach einem Neuladen erhalten.</li>
+        <li>Mit Finger, Apple Pencil oder Maus zeichnen; Farbe Schwarz, Rot oder Blau wählen. Ein Tipp setzt einen Punkt.</li>
+        <li><b>Radierer</b>: über Striche wischen, um sie zu entfernen. <b>Alles löschen</b> lässt sich mit «Rückgängig» zurückholen.</li>
+        <li>Mit dem Apple Pencil: sobald der Stift benutzt wurde, zeichnen Finger nicht mehr (Handballen darf aufliegen).</li>
+        <li>Auf dem iPad am besten als App installieren (siehe Daten & Backup), dann nutzt die Tafel den ganzen Bildschirm.</li>
+      </ul>
+    ),
+  },
   symbols: { title: 'Symbole', body: <Legend /> },
 } satisfies Record<string, { title: string; body: ReactNode }>
 

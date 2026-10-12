@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Board } from './Board'
 import { Collections } from './Collections'
 import { Dashboard } from './Dashboard'
 import { load, store } from './db'
@@ -11,7 +12,7 @@ import type { Change } from './model'
 import { Sessions } from './Sessions'
 import type { Db, Drill } from './types'
 
-const TABS = [['library', 'Bibliothek'], ['collections', 'Sammlungen'], ['sessions', 'Trainings'], ['dashboard', 'Auswertung'], ['help', 'Hilfe']] as const
+const TABS = [['library', 'Bibliothek'], ['collections', 'Sammlungen'], ['sessions', 'Trainings'], ['board', 'Taktiktafel'], ['dashboard', 'Auswertung'], ['help', 'Hilfe']] as const
 type Tab = (typeof TABS)[number][0]
 
 export function App() {
@@ -156,6 +157,7 @@ export function App() {
         {tab === 'library' && <Library db={db} change={change} onEdit={(drill) => setEditing({ drill })} />}
         {tab === 'collections' && <Collections db={db} change={change} onEdit={(drill) => setEditing({ drill })} />}
         {tab === 'dashboard' && <Dashboard db={db} />}
+        {tab === 'board' && <Board />}
         {tab === 'help' && <Help />}
       </div>
       {tab === 'sessions' && <Sessions db={db} change={change} onEditEntry={(sessionId, e) => setEditing({ drill: { ...structuredClone(e.drill), id: uid() }, variant: { sessionId, entryId: e.id, title: e.drill.title } })} />}
