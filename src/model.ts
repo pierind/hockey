@@ -1,7 +1,7 @@
 import { mid, uid } from './scene'
 import { categories, elements } from './sihf'
 import { ROUTE_LABELS, SYMBOL_LABELS } from './types'
-import type { Collection, Db, Drill, Item, Pt, Session } from './types'
+import type { Collection, Db, Drill, Item, Pt, Session, SessionEntry } from './types'
 
 export type Change = (fn: (db: Db) => Db) => Promise<void>
 
@@ -20,7 +20,7 @@ export const newDrill = (): Drill => ({
   updatedAt: '',
 })
 
-export const badMinutes = (m?: number) => m !== undefined && !(Number.isFinite(m) && m >= 0)
+export const badNumber = (m?: number) => m !== undefined && !(Number.isFinite(m) && m >= 0)
 
 // What is missing before a drill counts as completed (drafts may skip these).
 export const drillProblems = (d: Drill) =>
@@ -92,8 +92,8 @@ export const duplicateSession = (s: Session): Session => ({
 })
 
 // Adds an imported backup to the current data without overwriting anything. Identical records (same id and
-// content) are skipped; a record whose id exists with different content is added as a copy «(Import)», and the
-// imported collections point at those copies.
+// content) are skipped; a drill or training whose id exists with different content is added as a copy «(Import)»,
+// and collections point at those copies.
 export function mergeDb(current: Db, incoming: Db) {
   const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
   const added = { drills: 0, collections: 0, sessions: 0 }
@@ -115,12 +115,24 @@ export function mergeDb(current: Db, incoming: Db) {
     return out
   }
   const drills = add(current.drills, incoming.drills, 'drills', (d) => ({ ...d, title: `${d.title} (Import)` }), (from, to) => drillIds.set(from, to))
-  const collections = add(
-    current.collections,
-    incoming.collections.map((c) => ({ ...c, drillIds: c.drillIds.map((id) => drillIds.get(id) ?? id) })),
-    'collections',
-    (c) => ({ ...c, name: `${c.name} (Import)` }),
-  )
+  // A collection that exists on both sides is combined: its missing drills are appended, nothing is removed.
+  const collections = [...current.collections]
+  for (const c of incoming.collections) {
+    const ids = c.drillIds.map((id) => drillIds.get(id) ?? id)
+    const i = collections.findIndex((x) => x.id === c.id)
+    if (i < 0) {
+      collections.push({ ...c, drillIds: ids })
+      added.collections++
+      continue
+    }
+    const extra = ids.filter((id) => !collections[i].drillIds.includes(id))
+    if (!extra.length) {
+      skipped++
+      continue
+    }
+    collections[i] = { ...collections[i], drillIds: [...collections[i].drillIds, ...extra] }
+    added.collections++
+  }
   const sessions = add(current.sessions, incoming.sessions, 'sessions', (s) => ({ ...s, title: `${s.title} (Import)` }))
   return { db: { ...current, drills, collections, sessions }, added, skipped }
 }
@@ -128,7 +140,38 @@ export function mergeDb(current: Db, incoming: Db) {
 // New training from a template or an earlier training: fresh ids, no date, starts as a plan.
 export const fromTemplate = (s: Session): Session => ({ ...duplicateSession(s), title: s.title, date: undefined, template: undefined })
 
-export const totalMinutes = (s: Session) => s.entries.reduce((sum, e) => sum + e.minutes, 0)
+// Consecutive entries joined by `parallel` form one Posten-Block.
+export function blocks(s: Session): SessionEntry[][] {
+  const out: SessionEntry[][] = []
+  s.entries.forEach((e, i) => (i && e.parallel ? out[out.length - 1].push(e) : out.push([e])))
+  return out
+}
+// A block lasts as long as its longest Posten; with rotation every group visits every Posten, one round each.
+export const blockMinutes = (b: SessionEntry[]) => Math.max(...b.map((e) => e.minutes)) * (b.length > 1 && b[0].rotate ? b.length : 1)
+export const totalMinutes = (s: Session) => blocks(s).reduce((sum, b) => sum + blockMinutes(b), 0)
+
+// Blocks with their start/end in minutes from the training start.
+export function timeline(s: Session) {
+  let t = 0
+  return blocks(s).map((entries) => {
+    const from = t
+    t += blockMinutes(entries)
+    return { entries, from, to: t }
+  })
+}
+// 'HH:MM' plus minutes, wrapping at midnight.
+export function clock(start: string, minutes: number) {
+  const [h, m] = start.split(':').map(Number)
+  const t = (((h * 60 + m + Math.round(minutes)) % 1440) + 1440) % 1440
+  return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`
+}
+
+// What a training needs: Posten in one block run at the same time, so they add up; the busiest block decides.
+export function needs(s: Session) {
+  const most = (k: 'players' | 'goalies') => Math.max(0, ...blocks(s).map((b) => b.reduce((n, e) => n + (e.drill[k] ?? 0), 0)))
+  const material = [...new Set(s.entries.map((e) => e.drill.material?.trim()).filter((m): m is string => !!m))]
+  return { players: most('players'), goalies: most('goalies'), material }
+}
 
 export function moveIndex<T>(list: T[], from: number, to: number): T[] {
   const next = [...list]
@@ -255,6 +298,7 @@ function checkDrill(d: unknown, w: string) {
   need(opt(d.primary, (p) => cats.includes(p as string)), `${w}: ungültiger Hauptfokus`)
   need(strs(d.elements) && d.elements.every((e) => ELEMENT_IDS.has(e)), `${w}: unbekanntes Schlüsselelement`)
   need(opt(d.minutes, (m) => isNum(m) && m >= 0), `${w}: ungültige Dauer`)
+  need(opt(d.players, (m) => isNum(m) && m >= 0) && opt(d.goalies, (m) => isNum(m) && m >= 0) && opt(d.material, isStr), `${w}: ungültige Angaben zu Spieler/innen oder Material`)
   need(typeof d.offIce === 'boolean' && typeof d.draft === 'boolean', `${w}: Felder fehlen`)
   need(isObj(d.scene) && RINKS.includes(d.scene.rink as string) && Array.isArray(d.scene.items), `${w}: ungültiges Diagramm`)
   d.scene.items.forEach((it, i) => checkItem(it, `${w}, Element ${i + 1}`))
@@ -273,10 +317,10 @@ export function validateDb(x: unknown): Db {
     need(c.drillIds.every((id) => drillIds.has(id)), `Sammlung ${i + 1}: verweist auf fehlende Übung`)
   })
   x.sessions.forEach((s, i) => {
-    need(isObj(s) && isStr(s.id) && isStr(s.title) && opt(s.date, isStr) && opt(s.final, (f) => typeof f === 'boolean') && opt(s.notes, isStr) && opt(s.template, (t) => typeof t === 'boolean') && Array.isArray(s.entries), `Training ${i + 1}: Felder fehlen`)
+    need(isObj(s) && isStr(s.id) && isStr(s.title) && opt(s.date, isStr) && opt(s.final, (f) => typeof f === 'boolean') && opt(s.notes, isStr) && opt(s.template, (t) => typeof t === 'boolean') && opt(s.start, (t) => isStr(t) && /^\d{2}:\d{2}$/.test(t)) && Array.isArray(s.entries), `Training ${i + 1}: Felder fehlen`)
     s.entries.forEach((e, j) => {
       const w = `Training ${i + 1}, Eintrag ${j + 1}`
-      need(isObj(e) && isStr(e.id) && isNum(e.minutes) && e.minutes >= 0 && isStr(e.notes), `${w}: Felder fehlen`)
+      need(isObj(e) && isStr(e.id) && isNum(e.minutes) && e.minutes >= 0 && isStr(e.notes) && opt(e.parallel, (b) => typeof b === 'boolean') && opt(e.rotate, (b) => typeof b === 'boolean'), `${w}: Felder fehlen`)
       checkDrill(e.drill, w)
     })
     need(unique(s.entries.map((e: Obj) => e.id)), `Training ${i + 1}: doppelte Eintrags-IDs`)

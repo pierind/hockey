@@ -1847,7 +1847,8 @@
             "minutes": 12
           },
           "minutes": 12,
-          "notes": "Stationen 40': Es werden 3 Gruppen gebildet. Jeder/Jede Gruppenleiter:in leitet die Gruppe durch die Übungen."
+          "notes": "Stationen 40': Es werden 3 Gruppen gebildet. Jeder/Jede Gruppenleiter:in leitet die Gruppe durch die Übungen.",
+          "rotate": true
         },
         {
           "id": "b5db11dd-f78b-4ffd-9014-f1ad835a1573",
@@ -1874,7 +1875,8 @@
             "minutes": 12
           },
           "minutes": 12,
-          "notes": ""
+          "notes": "",
+          "parallel": true
         },
         {
           "id": "8c9e676f-2fa1-47aa-b99c-a58e1b025623",
@@ -1899,7 +1901,8 @@
             "minutes": 12
           },
           "minutes": 12,
-          "notes": ""
+          "notes": "",
+          "parallel": true
         },
         {
           "id": "74184717-9cd8-4557-9b3f-60c64b4a32bd",

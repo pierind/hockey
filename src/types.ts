@@ -48,12 +48,17 @@ export type Drill = {
   primary?: string
   elements: string[] // Schlüsselelement ids, e.g. 'A02'
   minutes?: number
+  players?: number // Spieler/innen needed
+  goalies?: number // Torhüter/innen needed
+  material?: string
   offIce: boolean
   draft: boolean
   scene: Scene
   updatedAt: string
 }
 export type Collection = { id: string; name: string; description?: string; drillIds: string[] }
-export type SessionEntry = { id: string; drill: Drill; minutes: number; notes: string } // drill is a snapshot
-export type Session = { id: string; title: string; date?: string; final?: boolean; template?: boolean; notes?: string; entries: SessionEntry[] } // final: definitive, otherwise a draft/plan
+// drill is a snapshot. parallel: runs at the same time as the previous entry (one Posten-Block);
+// rotate, on a block's first entry: groups rotate through every Posten of the block.
+export type SessionEntry = { id: string; drill: Drill; minutes: number; notes: string; parallel?: boolean; rotate?: boolean }
+export type Session = { id: string; title: string; date?: string; start?: string /* 'HH:MM' */; final?: boolean; template?: boolean; notes?: string; entries: SessionEntry[] } // final: definitive, otherwise a draft/plan
 export type Db = { version: 1; drills: Drill[]; collections: Collection[]; sessions: Session[] }

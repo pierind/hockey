@@ -3,7 +3,7 @@ import type { KeyboardEvent, PointerEvent, ReactNode } from 'react'
 import { remove, store } from './db'
 import { Items, Legend, RouteIcon, SymbolIcon } from './Diagram'
 import type { HandleKey } from './Diagram'
-import { badMinutes, drillProblems, moveIndex } from './model'
+import { badNumber, drillProblems, moveIndex } from './model'
 import { HelpButton } from './Help'
 import { CENTER, Rink } from './Rink'
 import { addItem, commit, dist, initHistory, moveItem, redo, removeItem, straighten, uid, undo, updateItem } from './scene'
@@ -192,7 +192,7 @@ export function Editor({ initial, saved, variantOf, onSave, onClose }: {
   async function save(asDraft: boolean) {
     const missing = drillProblems(drill)
     setProblems(missing)
-    if (badMinutes(drill.minutes) || (!asDraft && missing.length)) return
+    if ([drill.minutes, drill.players, drill.goalies].some(badNumber) || (!asDraft && missing.length)) return
     // A variant keeps the original's name only if renamed; otherwise it is marked so the library can tell them apart.
     const title = variantOf && drill.title === variantOf ? `${drill.title} (Variante)` : drill.title
     const next: Drill = { ...drill, title, keyPoints: drill.keyPoints.filter((k) => k.trim()), draft: asDraft, updatedAt: new Date().toISOString() }
@@ -363,10 +363,22 @@ function DrillForm({ d, set }: { d: Drill; set: (patch: Partial<Drill>) => void 
         </fieldset>
       )}
       <label>Dauer-Vorschlag (Min.)
-        <input type="number" min={0} defaultValue={d.minutes ?? ''} aria-invalid={badMinutes(d.minutes)}
+        <input type="number" min={0} defaultValue={d.minutes ?? ''} aria-invalid={badNumber(d.minutes)}
           onChange={(e) => set({ minutes: e.target.value === '' ? undefined : Number(e.target.value) })} />
       </label>
-      {badMinutes(d.minutes) && <p className="problems">Dauer muss 0 oder mehr Minuten sein.</p>}
+      {badNumber(d.minutes) && <p className="problems">Dauer muss 0 oder mehr Minuten sein.</p>}
+      <div className="row">
+        <label>Spieler/innen
+          <input type="number" min={0} size={4} defaultValue={d.players ?? ''} aria-invalid={badNumber(d.players)}
+            onChange={(e) => set({ players: e.target.value === '' ? undefined : Number(e.target.value) })} />
+        </label>
+        <label>Torhüter/innen
+          <input type="number" min={0} size={4} defaultValue={d.goalies ?? ''} aria-invalid={badNumber(d.goalies)}
+            onChange={(e) => set({ goalies: e.target.value === '' ? undefined : Number(e.target.value) })} />
+        </label>
+      </div>
+      {(badNumber(d.players) || badNumber(d.goalies)) && <p className="problems">Anzahl muss 0 oder mehr sein.</p>}
+      <label>Material <input value={d.material ?? ''} placeholder="z. B. 20 Pucks, 6 Pylonen" onChange={(e) => set({ material: e.target.value || undefined })} /></label>
       <label className="check"><input type="checkbox" checked={d.offIce} onChange={(e) => set({ offIce: e.target.checked })} /> Off-Ice-Übung</label>
     </form>
   )

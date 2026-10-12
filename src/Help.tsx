@@ -11,8 +11,9 @@ const HELP = {
         <li>Alle Daten liegen nur in diesem Browser auf diesem Gerät. Browserdaten löschen, privates Surfen oder ein anderer Browser bedeuten: Daten weg bzw. nicht sichtbar.</li>
         <li>Darum regelmässig <b>Backup exportieren</b>. Die Datei enthält alle Übungen mit Zeichnungen, Sammlungen und Trainings.</li>
         <li><b>Backup importieren</b> prüft die Datei zuerst. Ist sie fehlerhaft, bleibt alles unverändert. Danach wählen:</li>
-        <li><b>Hinzufügen</b>: bestehende Daten bleiben. Gleiche Einträge werden übersprungen; ein Eintrag, der hier schon existiert aber anders ist, wird als Kopie «(Import)» ergänzt. So lassen sich Übungen und Trainings mit anderen Coaches austauschen.</li>
+        <li><b>Hinzufügen</b>: bestehende Daten bleiben. Gleiche Einträge werden übersprungen; eine Übung oder ein Training, das hier schon existiert aber anders ist, wird als Kopie «(Import)» ergänzt. Gleichnamige Sammlungen (gleiche Herkunft) werden zusammengeführt: fehlende Übungen kommen dazu, nichts wird entfernt. So lassen sich Übungen und Trainings mit anderen Coaches austauschen.</li>
         <li><b>Alles ersetzen</b>: alle aktuellen Daten werden durch die Datei ersetzt; vorher wird ein Export angeboten.</li>
+        <li><b>Als App installieren</b> (über die veröffentlichte Webadresse): iPad/iPhone in Safari «Teilen» → «Zum Home-Bildschirm»; Chrome/Edge über das Installieren-Symbol in der Adresszeile. Nach dem ersten Öffnen funktioniert die App auch ohne Internet. Die Daten bleiben pro Gerät; zum Übertragen Backup exportieren und auf dem anderen Gerät «Hinzufügen».</li>
       </ul>
     ),
   },
@@ -23,6 +24,7 @@ const HELP = {
         <li><b>Neue Übung</b> öffnet den Zeichen-Editor. Fertig ist eine Übung mit Titel, Beschreibung, mindestens einem Coaching-Punkt und einer Erscheinungsform; sonst kann sie als <b>Entwurf</b> gespeichert werden.</li>
         <li>Die Suche durchsucht Titel, Beschreibung und Coaching-Punkte. Filter: Erscheinungsform, dann Schlüsselelement (die Liste zeigt nur die Elemente der gewählten Erscheinungsform), und Ort (Eis / Off-Ice).</li>
         <li><b>Duplizieren</b> erstellt eine Variante; das Original bleibt unverändert.</li>
+        <li>Optional pro Übung: Anzahl <b>Spieler/innen</b>, <b>Torhüter/innen</b> und <b>Material</b>. Daraus zeigt jedes Training, was es benötigt.</li>
         <li><b>Löschen</b> entfernt die Übung auch aus eigenen Sammlungen. Bereits geplante Trainings behalten ihre Kopie.</li>
       </ul>
     ),
@@ -58,6 +60,9 @@ const HELP = {
         <li>Trainings sind nach Monat geordnet; vergangene Monate sind zugeklappt. Die Suche durchsucht Titel, Notizen und die enthaltenen Übungen; Filter nach Erscheinungsform und Schlüsselelement.</li>
         <li>Status: <span className="status-badge draft">✎ Entwurf</span> = geplant, noch offen; <span className="status-badge final">✓ Definitiv</span> = festgelegt; <span className="status-badge template">▤ Vorlage</span> = Vorlage. Umschalten im Training.</li>
         <li><b>Vorlagen</b>: ein Training mit «Vorlage» markieren (z. B. typischer Ablauf Einwärmen → Posten → Spielform). Vorlagen stehen oben in eigenem Ordner und zählen nicht in der Auswertung. «Neues Training aus…» erstellt aus einer Vorlage oder einem früheren Training ein neues Training ohne Datum, als Entwurf. Mit «Ersetzen durch…» lässt sich pro Eintrag eine andere Übung einsetzen; Dauer und Notizen bleiben.</li>
+        <li><b>Start</b> (Uhrzeit) eintragen: jeder Eintrag zeigt dann seine Zeit, z. B. 17:07–17:47, auch auf dem Trainingsblatt.</li>
+        <li><b>Posten-Block</b>: «Parallel (Posten)» bei einem Eintrag setzen, er läuft dann gleichzeitig mit dem vorherigen. Ohne Rotation dauert der Block so lange wie der längste Posten; mit «Gruppen rotieren» besucht jede Gruppe jeden Posten, der Block dauert also Anzahl Posten × längster Posten. Wechselzeit ist nicht eingerechnet (z. B. Posten-Dauer etwas länger setzen). Auf dem Trainingsblatt stehen die Posten nebeneinander.</li>
+        <li><b>Benötigt</b>: aus den Angaben der Übungen (Spieler/innen, Torhüter/innen, Material). Posten im selben Block laufen gleichzeitig und werden zusammengezählt; massgebend ist der Block mit dem grössten Bedarf.</li>
         <li><b>Bearbeiten</b> bei einem Eintrag öffnet die Übung im Editor. Speichern legt sie als neue <b>Variante</b> in der Bibliothek an (Titel mit «(Variante)», falls nicht umbenannt) und setzt sie in diesem Eintrag ein. Die Original-Übung und andere Trainings bleiben unverändert. Schliessen ohne Speichern ändert nichts.</li>
         <li><b>Notizen zum Training</b> gelten für das ganze Training (z. B. Schwerpunkte, Key-Points Coach), erscheinen auf dem Trainingsblatt und werden durchsucht. Pro Übung gibt es zusätzlich eigene Notizen.</li>
         <li>Übungen werden als <b>Kopie</b> eingeplant: spätere Änderungen in der Bibliothek ändern ein Training nicht. Dieselbe Übung darf mehrmals vorkommen.</li>

@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { addEntries, categoryCollections, categoryMinutes, deleteDrill, fromTemplate, mergeDb, saveVariant, selectSessions, filterDrills, filterSessions, isoWeek, periodStats, drillProblems, duplicateDrill, migrateDrill, moveIndex, newDrill, upsertDrill, validateDb } from './model'
+import { addEntries, blocks, clock, needs, timeline, totalMinutes, categoryCollections, categoryMinutes, deleteDrill, fromTemplate, mergeDb, saveVariant, selectSessions, filterDrills, filterSessions, isoWeek, periodStats, drillProblems, duplicateDrill, migrateDrill, moveIndex, newDrill, upsertDrill, validateDb } from './model'
 import type { Db, Drill } from './types'
 
 const drill = (over: Partial<Drill> = {}): Drill => ({
@@ -147,10 +147,10 @@ test('mergeDb adds new records, skips identical ones and copies conflicting ones
   theirs.collections[0].drillIds.push('new')
   const { db, added, skipped } = mergeDb(mine, theirs)
   expect(skipped).toBe(1) // the unchanged session
-  expect(added).toEqual({ drills: 2, collections: 1, sessions: 0 })
+  expect(added).toEqual({ drills: 2, collections: 1, sessions: 0 }) // the collection was combined, not copied
   expect(db.drills.map((d) => d.title)).toEqual(['Give and Go', 'Geändert (Import)', 'Neu'])
-  expect(db.collections[0]).toEqual(mine.collections[0])
-  expect(db.collections[1].drillIds).toEqual([db.drills[1].id, 'new']) // points at the copy, not the original
+  expect(db.collections).toHaveLength(1)
+  expect(db.collections[0].drillIds).toEqual([mine.drills[0].id, db.drills[1].id, 'new']) // original kept, copy and new drill appended
   expect(() => validateDb(JSON.parse(JSON.stringify(db)))).not.toThrow()
   expect(mergeDb(mine, mine).skipped).toBe(3)
 })
@@ -174,4 +174,26 @@ test('saveVariant adds a new drill and changes only the edited entry', () => {
   expect(next.drills[0]).toEqual(db.drills[0])
   expect(next.sessions[0].entries[0].drill.id).toBe('v')
   expect(next.sessions[0].entries[1]).toEqual(second)
+})
+
+test('Posten-Blocks: parallel entries share time, rotation multiplies by the number of Posten', () => {
+  const d = drill({ minutes: 12 })
+  const base = addEntries({ id: 's', title: 'T', start: '17:00', entries: [] }, [{ ...d, minutes: 7 }, d, d, d, { ...d, minutes: 5 }])
+  const e = base.entries
+  const parallel = { ...base, entries: [e[0], e[1], { ...e[2], parallel: true }, { ...e[3], parallel: true }, e[4]] }
+  expect(blocks(parallel).map((b) => b.length)).toEqual([1, 3, 1])
+  expect(totalMinutes(parallel)).toBe(7 + 12 + 5)
+  const rotating = { ...parallel, entries: parallel.entries.map((x, i) => (i === 1 ? { ...x, rotate: true } : x)) }
+  expect(totalMinutes(rotating)).toBe(7 + 36 + 5)
+  expect(timeline(rotating).map((b) => `${clock('17:00', b.from)}-${clock('17:00', b.to)}`)).toEqual(['17:00-17:07', '17:07-17:43', '17:43-17:48'])
+  expect(totalMinutes({ ...base, entries: [{ ...e[0], parallel: true }] })).toBe(7) // a first entry cannot join a block
+  expect(clock('23:50', 20)).toBe('00:10')
+})
+
+test('needs adds players of parallel Posten and lists material once', () => {
+  const a = drill({ players: 4, goalies: 1, material: 'Pucks' })
+  const b = drill({ players: 6, material: 'Pucks' })
+  const s = addEntries({ id: 's', title: 'T', entries: [] }, [a, b])
+  expect(needs(s)).toEqual({ players: 6, goalies: 1, material: ['Pucks'] })
+  expect(needs({ ...s, entries: [s.entries[0], { ...s.entries[1], parallel: true }] }).players).toBe(10)
 })

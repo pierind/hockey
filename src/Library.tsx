@@ -16,6 +16,9 @@ export function DrillSummary({ drill }: { drill: Drill }) {
       <Picture drill={drill} />
       <div>
         <Chips drill={drill} />
+        {(drill.players || drill.goalies || drill.material) && (
+          <p className="needs">{[drill.players && `${drill.players} Spieler/innen`, drill.goalies && `${drill.goalies} Torhüter/innen`, drill.material && `Material: ${drill.material}`].filter(Boolean).join(' · ')}</p>
+        )}
         {drill.description && <p className="pre">{drill.description}</p>}
         {drill.keyPoints.length > 0 && <ul>{drill.keyPoints.map((k, i) => <li key={i}>{k}</li>)}</ul>}
       </div>

@@ -1,3 +1,4 @@
+import { memo, useCallback, useRef } from 'react'
 import type { ComponentProps, PointerEvent } from 'react'
 import { Rink } from './Rink'
 import { dist, mid } from './scene'
@@ -149,7 +150,10 @@ const NetDefs = () => (
 
 const hitStroke = { fill: 'none', stroke: 'transparent', strokeWidth: 1, pointerEvents: 'stroke' } as const
 
-function ItemView({ item, onPointerDown }: { item: Item; onPointerDown?: (e: PointerEvent) => void }) {
+// Memoised: while dragging only the moved item changes identity, so the other items (and their wavy-line
+// sampling) are not recomputed on every pointer move.
+const ItemView = memo(function ItemView({ item, onDown }: { item: Item; onDown?: (id: string, e: PointerEvent) => void }) {
+  const onPointerDown = onDown && ((e: PointerEvent) => onDown(item.id, e))
   const g = onPointerDown ? { onPointerDown, style: { cursor: 'move' } } : {}
   switch (item.kind) {
     case 'route':
@@ -169,7 +173,7 @@ function ItemView({ item, onPointerDown }: { item: Item; onPointerDown?: (e: Poi
         </g>
       )
   }
-}
+})
 
 function Highlight({ item }: { item: Item }) {
   const glow = { fill: 'none', stroke: SELECT, strokeWidth: 0.5, opacity: 0.35, pointerEvents: 'none' } as const
@@ -195,6 +199,10 @@ export function Items({ scene, selected, onItemDown, onHandleDown }: {
   onItemDown?: (id: string, e: PointerEvent) => void
   onHandleDown?: (id: string, key: HandleKey, e: PointerEvent) => void
 }) {
+  // Stable handler that always calls the latest onItemDown, so memoised items need not re-render for it.
+  const latest = useRef(onItemDown)
+  latest.current = onItemDown
+  const onDown = useCallback((id: string, e: PointerEvent) => latest.current?.(id, e), [])
   const sel = scene.items.find((it) => it.id === selected)
   const handles: [HandleKey, Pt][] = sel?.kind === 'route' ? [['from', sel.from], ['to', sel.to]] : []
   if (sel?.kind === 'route' && !sel.via) handles.push(['ctrl', sel.ctrl ?? mid(sel.from, sel.to)])
@@ -208,7 +216,7 @@ export function Items({ scene, selected, onItemDown, onHandleDown }: {
     <g>
       <NetDefs />
       {sel && <Highlight item={sel} />}
-      {scene.items.map((it) => <ItemView key={it.id} item={it} onPointerDown={onItemDown && ((e) => onItemDown(it.id, e))} />)}
+      {scene.items.map((it) => <ItemView key={it.id} item={it} onDown={onItemDown ? onDown : undefined} />)}
       {sel && onHandleDown && handles.map(([key, [x, y]]) => (
         <circle key={key} cx={x} cy={y} r={0.45} stroke={SELECT} strokeWidth={0.12} strokeDasharray={key === 'ctrl' ? '0.2 0.12' : undefined} fill={key === 'rot' ? SELECT : '#fff'}
           style={{ cursor: 'grab' }} onPointerDown={(e) => onHandleDown(sel.id, key, e)} />
@@ -236,6 +244,6 @@ export function Legend() {
   )
 }
 
-export const Thumb = ({ scene, ...props }: { scene: Scene } & ComponentProps<'svg'>) => (
+export const Thumb = memo(({ scene, ...props }: { scene: Scene } & ComponentProps<'svg'>) => (
   <Rink template={scene.rink} aria-label="Diagramm" {...props}><Items scene={scene} /></Rink>
-)
+))

@@ -222,3 +222,5 @@ __marimo__/
 # Node
 node_modules/
 dist/
+test-results/
+playwright-report/

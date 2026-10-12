@@ -134,6 +134,16 @@ label.check { display: flex; gap: 8px; align-items: baseline; font-size: 0.88rem
 .entry textarea, .session-notes textarea { width: 100%; margin-top: 4px; }
 .session-notes { display: block; margin: 12px 0; font-weight: 600; font-size: 0.88rem; }
 .session-notes textarea { font-weight: normal; }
+.entry-actions { margin: -2px 0 10px; }
+.entry-actions button, .entry-actions select { font-size: 0.82rem; padding: 4px 9px; }
+.time { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--accent-ink); background: var(--accent-soft); border-radius: 6px; padding: 2px 8px; }
+.needs { color: var(--muted); font-size: 0.88rem; margin: 6px 0; }
+.block { background: #f7fafc; border: 1px dashed #b7c4d3; border-radius: 14px; padding: 10px 12px 2px; margin-bottom: 14px; }
+.block-head h3 { margin: 0; }
+.entries.posten { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 12px; margin: 10px 0 0; }
+.entries.posten .summary { grid-template-columns: 1fr; }
+.posten-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.posten-grid .summary { grid-template-columns: 1fr; }
 .handle { cursor: grab; font-size: 1.2rem; user-select: none; color: var(--muted); }
 .summary { display: grid; grid-template-columns: minmax(200px, 320px) 1fr; gap: 14px; align-items: start; }
 .summary svg { border: 1px solid var(--line); border-radius: 8px; }

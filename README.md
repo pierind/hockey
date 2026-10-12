@@ -12,4 +12,12 @@ npm install
 npm run dev     # http://localhost:5173
 npm test        # unit tests
 npm run build   # static site in dist/
+npm run e2e     # browser workflow + offline test (first time: npx playwright install chromium)
 ```
+
+## Publish
+
+`.github/workflows/pages.yml` builds and deploys to GitHub Pages on every push to `main`
+(one-time: repository Settings → Pages → Source: GitHub Actions). The app then runs at
+https://pierind.github.io/hockey/, can be installed to the home screen and works offline.
+Data stays in each browser; move it between devices with backup export / import («Hinzufügen»).
