@@ -1,0 +1,117 @@
+import { useRef } from 'react'
+import type { ReactNode } from 'react'
+import { Legend } from './Diagram'
+
+// All explanations live here; pages only show a small «?» that opens their section.
+const HELP = {
+  data: {
+    title: 'Daten & Backup',
+    body: (
+      <ul>
+        <li>Alle Daten liegen nur in diesem Browser auf diesem Gerät. Browserdaten löschen, privates Surfen oder ein anderer Browser bedeuten: Daten weg bzw. nicht sichtbar.</li>
+        <li>Darum regelmässig <b>Backup exportieren</b>. Die Datei enthält alle Übungen mit Zeichnungen, Sammlungen und Trainings.</li>
+        <li><b>Backup importieren</b> prüft die Datei zuerst. Ist sie fehlerhaft, bleibt alles unverändert. Danach wählen:</li>
+        <li><b>Hinzufügen</b>: bestehende Daten bleiben. Gleiche Einträge werden übersprungen; eine Übung oder ein Training, das hier schon existiert aber anders ist, wird als Kopie «(Import)» ergänzt. Gleichnamige Sammlungen (gleiche Herkunft) werden zusammengeführt: fehlende Übungen kommen dazu, nichts wird entfernt. So lassen sich Übungen und Trainings mit anderen Coaches austauschen.</li>
+        <li><b>Alles ersetzen</b>: alle aktuellen Daten werden durch die Datei ersetzt; vorher wird ein Export angeboten.</li>
+        <li><b>Als App installieren</b> (über die veröffentlichte Webadresse): iPad/iPhone in Safari «Teilen» → «Zum Home-Bildschirm»; Chrome/Edge über das Installieren-Symbol in der Adresszeile. Nach dem ersten Öffnen funktioniert die App auch ohne Internet. Die Daten bleiben pro Gerät; zum Übertragen Backup exportieren und auf dem anderen Gerät «Hinzufügen».</li>
+      </ul>
+    ),
+  },
+  library: {
+    title: 'Übungen (Bibliothek)',
+    body: (
+      <ul>
+        <li><b>Neue Übung</b> öffnet den Zeichen-Editor. Fertig ist eine Übung mit Titel, Beschreibung, mindestens einem Coaching-Punkt und einer Erscheinungsform; sonst kann sie als <b>Entwurf</b> gespeichert werden.</li>
+        <li>Die Suche durchsucht Titel, Beschreibung und Coaching-Punkte. Filter: Erscheinungsform, dann Schlüsselelement (die Liste zeigt nur die Elemente der gewählten Erscheinungsform), und Ort (Eis / Off-Ice).</li>
+        <li><b>Duplizieren</b> erstellt eine Variante; das Original bleibt unverändert.</li>
+        <li>Optional pro Übung: Anzahl <b>Spieler/innen</b>, <b>Torhüter/innen</b> und <b>Material</b>. Daraus zeigt jedes Training, was es benötigt.</li>
+        <li><b>Löschen</b> entfernt die Übung auch aus eigenen Sammlungen. Bereits geplante Trainings behalten ihre Kopie.</li>
+      </ul>
+    ),
+  },
+  editor: {
+    title: 'Übung zeichnen',
+    body: (
+      <ul>
+        <li>Links ein Werkzeug wählen. Symbole per Klick auf das Feld setzen oder aus der Liste aufs Feld ziehen.</li>
+        <li><b>Schlittschuh-Linien</b> (vorwärts, rückwärts, seitwärts, bremsen) frei zeichnen. Fast gerade Linien werden automatisch begradigt; <b>Cmd/Ctrl+Z</b> zeigt wieder die Freihand-Linie. «Gerade machen» begradigt jederzeit.</li>
+        <li><b>Pass</b> und <b>Schuss</b> sind gerade Linien. Im Auswahl-Modus den gestrichelten Punkt ziehen, um sie zu biegen.</li>
+        <li><b>Tor</b> und <b>Toblerone</b> drehen: den blauen Punkt ziehen (15°-Schritte) oder die Dreh-Knöpfe. Toblerone: Klick legt sie flach hin, Ziehen von einem Ende richtet sie aus (fix 6 m lang).</li>
+        <li><b>Auswählen / verschieben</b>: Elemente ziehen; Linien-Enden an den Punkten verschieben.</li>
+        <li>Tastatur (Zeichenfläche fokussiert): Pfeiltasten verschieben (Shift: weiter), Entf löscht, Cmd/Ctrl+D dupliziert, Enter setzt das gewählte Symbol in die Mitte, Escape bricht ab, Cmd/Ctrl+Z / Shift+Cmd/Ctrl+Z rückgängig / wiederholen.</li>
+        <li>Ungespeicherte Änderungen werden lokal als Entwurf gesichert und nach einem Neuladen wiederhergestellt.</li>
+      </ul>
+    ),
+  },
+  collections: {
+    title: 'Sammlungen',
+    body: (
+      <ul>
+        <li><b>Nach Erscheinungsform</b>: automatisch. Eine Übung erscheint dort, sobald sie die Erscheinungsform hat.</li>
+        <li><b>Eigene Sammlungen</b>: frei benennen und Übungen von Hand hinzufügen. Eine Übung kann in mehreren Sammlungen sein, ohne kopiert zu werden.</li>
+        <li>Eine ganze Sammlung kann in ein Training übernommen werden.</li>
+      </ul>
+    ),
+  },
+  sessions: {
+    title: 'Trainings',
+    body: (
+      <ul>
+        <li>Trainings sind nach Monat geordnet; vergangene Monate sind zugeklappt. Die Suche durchsucht Titel, Notizen und die enthaltenen Übungen; Filter nach Erscheinungsform und Schlüsselelement.</li>
+        <li>Status: <span className="status-badge draft">✎ Entwurf</span> = geplant, noch offen; <span className="status-badge final">✓ Definitiv</span> = festgelegt; <span className="status-badge template">▤ Vorlage</span> = Vorlage. Umschalten im Training.</li>
+        <li><b>Vorlagen</b>: ein Training mit «Vorlage» markieren (z. B. typischer Ablauf Einwärmen → Posten → Spielform). Vorlagen stehen oben in eigenem Ordner und zählen nicht in der Auswertung. «Neues Training aus…» erstellt aus einer Vorlage oder einem früheren Training ein neues Training ohne Datum, als Entwurf. Mit «Ersetzen durch…» lässt sich pro Eintrag eine andere Übung einsetzen; Dauer und Notizen bleiben.</li>
+        <li><b>Start</b> (Uhrzeit) eintragen: jeder Eintrag zeigt dann seine Zeit, z. B. 17:07–17:47, auch auf dem Trainingsblatt.</li>
+        <li><b>Posten-Block</b>: «Parallel (Posten)» bei einem Eintrag setzen, er läuft dann gleichzeitig mit dem vorherigen. Ohne Rotation dauert der Block so lange wie der längste Posten; mit «Gruppen rotieren» besucht jede Gruppe jeden Posten, der Block dauert also Anzahl Posten × längster Posten. Wechselzeit ist nicht eingerechnet (z. B. Posten-Dauer etwas länger setzen). Auf dem Trainingsblatt stehen die Posten nebeneinander.</li>
+        <li><b>Benötigt</b>: aus den Angaben der Übungen (Spieler/innen, Torhüter/innen, Material). Posten im selben Block laufen gleichzeitig und werden zusammengezählt; massgebend ist der Block mit dem grössten Bedarf.</li>
+        <li><b>Bearbeiten</b> bei einem Eintrag öffnet die Übung im Editor. Speichern legt sie als neue <b>Variante</b> in der Bibliothek an (Titel mit «(Variante)», falls nicht umbenannt) und setzt sie in diesem Eintrag ein. Die Original-Übung und andere Trainings bleiben unverändert. Schliessen ohne Speichern ändert nichts.</li>
+        <li><b>Notizen zum Training</b> gelten für das ganze Training (z. B. Schwerpunkte, Key-Points Coach), erscheinen auf dem Trainingsblatt und werden durchsucht. Pro Übung gibt es zusätzlich eigene Notizen.</li>
+        <li>Übungen werden als <b>Kopie</b> eingeplant: spätere Änderungen in der Bibliothek ändern ein Training nicht. Dieselbe Übung darf mehrmals vorkommen.</li>
+        <li>Reihenfolge: am Griff ⠿ ziehen oder «Nach oben / Nach unten». Eine ungültige Dauer wird nicht übernommen.</li>
+        <li><b>Drucken / PDF</b> erstellt ein Trainingsblatt mit Diagrammen und Legende (im Druckdialog «Als PDF sichern»).</li>
+      </ul>
+    ),
+  },
+  dashboard: {
+    title: 'Auswertung',
+    body: (
+      <ul>
+        <li>Oben die Abfrage wählen: <b>Bericht</b>, <b>Gruppierung</b> (Gesamt, pro Woche nach ISO-Kalenderwoche, pro Monat), <b>Status</b> (definitiv, geplant oder beides) und optional einen Zeitraum <b>Von / Bis</b>.</li>
+        <li><b>Trainings</b>: Anzahl Trainings und Minuten pro Zeitraum, getrennt nach definitiv und geplant (Entwurf).</li>
+        <li><b>Minuten pro Erscheinungsform</b>: alle neun Erscheinungsformen mit Minuten pro Zeitraum (dunkler = mehr) und Total. Hat eine Übung mehrere Erscheinungsformen, werden ihre Minuten gleichmässig aufgeteilt, damit die Summe der Trainingszeit entspricht. Übungen ohne Erscheinungsform erscheinen als «Ohne Erscheinungsform».</li>
+        <li>Minuten sind die Dauern der Übungen im Training. Trainings ohne Datum werden nicht gezählt.</li>
+      </ul>
+    ),
+  },
+  symbols: { title: 'Symbole', body: <Legend /> },
+} satisfies Record<string, { title: string; body: ReactNode }>
+
+export type HelpTopic = keyof typeof HELP
+
+const HelpSection = ({ topic }: { topic: HelpTopic }) => (
+  <section className="help-section">
+    <h3>{HELP[topic].title}</h3>
+    {HELP[topic].body}
+  </section>
+)
+
+export function Help() {
+  return (
+    <section>
+      <h2>Hilfe</h2>
+      {(Object.keys(HELP) as HelpTopic[]).map((t) => <HelpSection key={t} topic={t} />)}
+    </section>
+  )
+}
+
+export function HelpButton({ topic }: { topic: HelpTopic }) {
+  const dialog = useRef<HTMLDialogElement>(null)
+  return (
+    <>
+      <button type="button" className="help-button" aria-label={`Hilfe: ${HELP[topic].title}`} onClick={() => dialog.current?.showModal()}>?</button>
+      <dialog ref={dialog} className="help-dialog" onClick={(e) => e.target === dialog.current && dialog.current.close()}>
+        <HelpSection topic={topic} />
+        <form method="dialog"><button>Schliessen</button></form>
+      </dialog>
+    </>
+  )
+}
