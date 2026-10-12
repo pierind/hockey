@@ -2,15 +2,16 @@ import { useState } from 'react'
 import { Legend } from './Diagram'
 import { HelpButton } from './Help'
 import { CategoryFilter, DrillSummary } from './Library'
-import { addEntries, categoryCollections, duplicateSession, filterSessions, monthKey, monthLabel, moveIndex, totalMinutes } from './model'
+import { addEntries, categoryCollections, duplicateSession, filterSessions, fromTemplate, monthKey, monthLabel, moveIndex, totalMinutes } from './model'
 import type { Change } from './model'
 import { uid } from './scene'
 import type { Db, Drill, Session, SessionEntry } from './types'
 
-export const StatusBadge = ({ final }: { final?: boolean }) =>
-  final ? <span className="status-badge final">✓ Definitiv</span> : <span className="status-badge draft">✎ Entwurf</span>
+export const StatusBadge = ({ s }: { s: Session }) =>
+  s.template ? <span className="status-badge template">▤ Vorlage</span>
+    : s.final ? <span className="status-badge final">✓ Definitiv</span> : <span className="status-badge draft">✎ Entwurf</span>
 
-export function Sessions({ db, change }: { db: Db; change: Change }) {
+export function Sessions({ db, change, onEditEntry }: { db: Db; change: Change; onEditEntry: (sessionId: string, entry: SessionEntry) => void }) {
   const [openId, setOpenId] = useState<string | null>(null)
   const [q, setQ] = useState('')
   const [category, setCategory] = useState('')
@@ -19,25 +20,42 @@ export function Sessions({ db, change }: { db: Db; change: Change }) {
   const upd = (id: string, fn: (s: Session) => Session) =>
     change((db) => ({ ...db, sessions: db.sessions.map((s) => (s.id === id ? fn(s) : s)) }))
 
-  if (session) return <SessionEditor key={session.id} s={session} db={db} upd={(fn) => upd(session.id, fn)} onBack={() => setOpenId(null)} />
+  if (session) return <SessionEditor key={session.id} s={session} db={db} upd={(fn) => upd(session.id, fn)} onBack={() => setOpenId(null)} onEdit={(e) => onEditEntry(session.id, e)} />
 
-  // Month folders in date order, undated last; past months start folded unless a search is active.
+  // Templates first, then month folders in date order, undated last; past months start folded unless searching.
   const searching = !!(q.trim() || category || element)
   const thisMonth = new Date().toISOString().slice(0, 7)
+  const folderOf = (s: Session) => (s.template ? 'template' : s.date ? monthKey(s.date) : '')
+  const order = (s: Session) => (s.template ? '0000' : s.date ?? '9999')
   const folders = new Map<string, Session[]>()
-  for (const s of filterSessions(db.sessions, q, category, element).sort((a, b) => (a.date ?? '9999').localeCompare(b.date ?? '9999')))
-    folders.set(s.date ? monthKey(s.date) : '', [...(folders.get(s.date ? monthKey(s.date) : '') ?? []), s])
+  for (const s of filterSessions(db.sessions, q, category, element).sort((a, b) => order(a).localeCompare(order(b))))
+    folders.set(folderOf(s), [...(folders.get(folderOf(s)) ?? []), s])
+  const open = (s: Session) => {
+    change((db) => ({ ...db, sessions: [...db.sessions, s] }))
+    setOpenId(s.id)
+  }
+  const earlier = db.sessions.filter((s) => !s.template).sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''))
 
   return (
     <section>
       <div className="row">
         <h2>Trainings</h2>
         <HelpButton topic="sessions" />
-        <button className="primary" onClick={() => {
-          const s: Session = { id: uid(), title: 'Neues Training', entries: [] }
-          change((db) => ({ ...db, sessions: [...db.sessions, s] }))
-          setOpenId(s.id)
-        }}>Neues Training</button>
+        <button className="primary" onClick={() => open({ id: uid(), title: 'Neues Training', entries: [] })}>Neues Training</button>
+        {db.sessions.length > 0 && (
+          <select aria-label="Neues Training aus Vorlage oder früherem Training" value="" onChange={(e) => {
+            const src = db.sessions.find((s) => s.id === e.target.value)
+            if (src) open(fromTemplate(src))
+          }}>
+            <option value="">Neues Training aus…</option>
+            <optgroup label="Vorlagen">
+              {db.sessions.filter((s) => s.template).map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
+            </optgroup>
+            <optgroup label="Frühere Trainings">
+              {earlier.map((s) => <option key={s.id} value={s.id}>{s.date ?? 'ohne Datum'} · {s.title}</option>)}
+            </optgroup>
+          </select>
+        )}
       </div>
       <div className="row">
         <input type="search" aria-label="Trainings durchsuchen" placeholder="Suchen…" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -45,12 +63,12 @@ export function Sessions({ db, change }: { db: Db; change: Change }) {
       </div>
       {db.sessions.length === 0 ? <p className="empty">Noch keine Trainings geplant.</p> : folders.size === 0 ? <p className="empty">Kein Training passt zu Suche und Filter.</p> : (
         [...folders].map(([month, list]) => (
-          <details key={month || 'none'} className="card" open={searching || !month || month >= thisMonth}>
-            <summary>{month ? monthLabel(month) : 'Ohne Datum'} ({list.length})</summary>
+          <details key={month || 'none'} className="card" open={searching || !month || month === 'template' || month >= thisMonth}>
+            <summary>{month === 'template' ? 'Vorlagen' : month ? monthLabel(month) : 'Ohne Datum'} ({list.length})</summary>
             <ul className="list">
               {list.map((s) => (
                 <li key={s.id} className="row">
-                  <StatusBadge final={s.final} />
+                  <StatusBadge s={s} />
                   <button className="link" onClick={() => setOpenId(s.id)}>{s.title}</button>
                   <span>{s.date ?? 'ohne Datum'} · {s.entries.length} Übungen · {totalMinutes(s)} Min.</span>
                   <button onClick={() => change((db) => ({ ...db, sessions: [...db.sessions, duplicateSession(s)] }))}>Duplizieren</button>
@@ -65,7 +83,7 @@ export function Sessions({ db, change }: { db: Db; change: Change }) {
   )
 }
 
-function SessionEditor({ s, db, upd, onBack }: { s: Session; db: Db; upd: (fn: (s: Session) => Session) => void; onBack: () => void }) {
+function SessionEditor({ s, db, upd, onBack, onEdit }: { s: Session; db: Db; upd: (fn: (s: Session) => Session) => void; onBack: () => void; onEdit: (e: SessionEntry) => void }) {
   const [invalid, setInvalid] = useState<string[]>([]) // entries whose typed duration was rejected
   const [dragFrom, setDragFrom] = useState<number | null>(null)
   const setEntry = (id: string, patch: Partial<SessionEntry>) => upd((s) => ({ ...s, entries: s.entries.map((e) => (e.id === id ? { ...e, ...patch } : e)) }))
@@ -78,8 +96,14 @@ function SessionEditor({ s, db, upd, onBack }: { s: Session; db: Db; upd: (fn: (
         <div className="row">
           <button onClick={onBack}>← Alle Trainings</button>
           <HelpButton topic="sessions" />
-          <StatusBadge final={s.final} />
-          <button onClick={() => upd((s) => ({ ...s, final: s.final ? undefined : true }))}>{s.final ? 'Zurück auf Entwurf' : 'Als definitiv markieren'}</button>
+          <StatusBadge s={s} />
+          {!s.template && <button onClick={() => upd((s) => ({ ...s, final: s.final ? undefined : true }))}>{s.final ? 'Zurück auf Entwurf' : 'Als definitiv markieren'}</button>}
+          <label className="check">
+            <input type="checkbox" checked={!!s.template} onChange={(e) => {
+              const template = e.target.checked || undefined
+              upd((s) => ({ ...s, template, final: undefined }))
+            }} /> Vorlage
+          </label>
         </div>
         <div className="row">
           <label>Titel <input defaultValue={s.title} onBlur={(e) => {
@@ -115,6 +139,12 @@ function SessionEditor({ s, db, upd, onBack }: { s: Session; db: Db; upd: (fn: (
             </optgroup>
           </select>
         </div>
+        <label className="session-notes">Notizen zum Training (z. B. Schwerpunkte, Key-Points Coach)
+          <textarea rows={3} defaultValue={s.notes ?? ''} onBlur={(e) => {
+            const notes = e.target.value.trim() || undefined
+            if (notes !== s.notes) upd((s) => ({ ...s, notes }))
+          }} />
+        </label>
         {s.entries.length === 0 && <p className="empty">Noch keine Übungen in diesem Training.</p>}
         <ol className="entries">
           {s.entries.map((e, i) => (
@@ -134,6 +164,14 @@ function SessionEditor({ s, db, upd, onBack }: { s: Session; db: Db; upd: (fn: (
                 {invalid.includes(e.id) && <span className="problems">Ungültige Dauer, nicht übernommen.</span>}
                 <button disabled={!i} onClick={() => move(i, i - 1)}>Nach oben</button>
                 <button disabled={i === s.entries.length - 1} onClick={() => move(i, i + 1)}>Nach unten</button>
+                <button onClick={() => onEdit(e)}>Bearbeiten</button>
+                <select aria-label={`${e.drill.title || 'Übung'} ersetzen`} value="" onChange={(ev) => {
+                  const d = db.drills.find((d) => d.id === ev.target.value)
+                  if (d) setEntry(e.id, { drill: structuredClone(d) })
+                }}>
+                  <option value="">Ersetzen durch…</option>
+                  {db.drills.map((d) => <option key={d.id} value={d.id}>{d.title || 'Ohne Titel'}{d.draft ? ' (Entwurf)' : ''}</option>)}
+                </select>
                 <button onClick={() => upd((s) => ({ ...s, entries: s.entries.filter((x) => x.id !== e.id) }))}>Entfernen</button>
               </div>
               <DrillSummary drill={e.drill} />
@@ -148,6 +186,7 @@ function SessionEditor({ s, db, upd, onBack }: { s: Session; db: Db; upd: (fn: (
       <div className="print-only">
         <h1>{s.title}</h1>
         <p>{s.date ?? ''} · Total {total} Min.</p>
+        {s.notes && <p className="pre">{s.notes}</p>}
         {s.entries.map((e, i) => (
           <article key={e.id}>
             <h2>{i + 1}. {e.drill.title} · {e.minutes} Min.</h2>

@@ -55,5 +55,5 @@ export type Drill = {
 }
 export type Collection = { id: string; name: string; description?: string; drillIds: string[] }
 export type SessionEntry = { id: string; drill: Drill; minutes: number; notes: string } // drill is a snapshot
-export type Session = { id: string; title: string; date?: string; final?: boolean; entries: SessionEntry[] } // final: definitive, otherwise a draft/plan
+export type Session = { id: string; title: string; date?: string; final?: boolean; template?: boolean; notes?: string; entries: SessionEntry[] } // final: definitive, otherwise a draft/plan
 export type Db = { version: 1; drills: Drill[]; collections: Collection[]; sessions: Session[] }

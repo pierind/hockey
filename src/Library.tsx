@@ -6,10 +6,14 @@ import { HelpButton } from './Help'
 import { categories, categoryLabel, elements } from './sihf'
 import type { Db, Drill } from './types'
 
+// Off-ice drills without a diagram get a placeholder instead of an empty rink.
+const Picture = ({ drill }: { drill: Drill }) =>
+  drill.offIce && !drill.scene.items.length ? <div className="office-thumb" aria-hidden>Off-Ice</div> : <Thumb scene={drill.scene} aria-label={`Diagramm: ${drill.title}`} />
+
 export function DrillSummary({ drill }: { drill: Drill }) {
   return (
     <div className="summary">
-      <Thumb scene={drill.scene} aria-label={`Diagramm: ${drill.title}`} />
+      <Picture drill={drill} />
       <div>
         <Chips drill={drill} />
         {drill.description && <p className="pre">{drill.description}</p>}
@@ -82,7 +86,7 @@ export function Library({ db, change, onEdit }: { db: Db; change: Change; onEdit
           {list.map((d) => (
             <li key={d.id} className="card">
               <button className="thumb" onClick={() => onEdit(d)} aria-label={`${d.title || 'Ohne Titel'} öffnen`}>
-                <Thumb scene={d.scene} aria-hidden />
+                <Picture drill={d} />
               </button>
               <h3>{d.title || 'Ohne Titel'} {d.draft && <span className="badge">Entwurf</span>}</h3>
               <Chips drill={d} />

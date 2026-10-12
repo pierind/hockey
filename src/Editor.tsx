@@ -25,9 +25,10 @@ const TOOLS: [Tool, string, ReactNode][] = [
 const TEMPLATES: [RinkTemplate, string][] = [['full', 'Ganzes Feld'], ['half', 'Halbes Feld'], ['zone', 'Drittel']]
 const clamp = (v: number, max: number) => Math.round(Math.min(max, Math.max(0, v)) * 100) / 100
 
-export function Editor({ initial, saved, onSave, onClose }: {
+export function Editor({ initial, saved, variantOf, onSave, onClose }: {
   initial: Drill
   saved?: Drill // the stored version, if any; used to tell whether there are unsaved changes
+  variantOf?: string // title of the training drill this edit becomes a variant of
   onSave: (d: Drill) => Promise<void>
   onClose: () => void
 }) {
@@ -192,7 +193,9 @@ export function Editor({ initial, saved, onSave, onClose }: {
     const missing = drillProblems(drill)
     setProblems(missing)
     if (badMinutes(drill.minutes) || (!asDraft && missing.length)) return
-    const next: Drill = { ...drill, keyPoints: drill.keyPoints.filter((k) => k.trim()), draft: asDraft, updatedAt: new Date().toISOString() }
+    // A variant keeps the original's name only if renamed; otherwise it is marked so the library can tell them apart.
+    const title = variantOf && drill.title === variantOf ? `${drill.title} (Variante)` : drill.title
+    const next: Drill = { ...drill, title, keyPoints: drill.keyPoints.filter((k) => k.trim()), draft: asDraft, updatedAt: new Date().toISOString() }
     setStatus('Speichert…')
     try {
       await onSave(next)
@@ -213,8 +216,9 @@ export function Editor({ initial, saved, onSave, onClose }: {
   return (
     <main>
       <div className="row toolbar">
-        <button onClick={close}>← Bibliothek</button>
+        <button onClick={close}>← Zurück</button>
         <h1>{meta.title || 'Neue Übung'}</h1>
+        {variantOf && <span className="chip">Variante von «{variantOf}»</span>}
         <HelpButton topic="editor" />
         <button className="primary" onClick={() => save(false)}>Speichern</button>
         <button onClick={() => setHist(undo)} disabled={!hist.past.length}>Rückgängig</button>

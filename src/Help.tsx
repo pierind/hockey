@@ -10,7 +10,9 @@ const HELP = {
       <ul>
         <li>Alle Daten liegen nur in diesem Browser auf diesem Gerät. Browserdaten löschen, privates Surfen oder ein anderer Browser bedeuten: Daten weg bzw. nicht sichtbar.</li>
         <li>Darum regelmässig <b>Backup exportieren</b>. Die Datei enthält alle Übungen mit Zeichnungen, Sammlungen und Trainings.</li>
-        <li><b>Backup importieren</b> prüft die Datei zuerst. Ist sie fehlerhaft, bleibt alles unverändert. Eine gültige Datei <b>ersetzt alle aktuellen Daten</b>; vorher wird ein Export angeboten.</li>
+        <li><b>Backup importieren</b> prüft die Datei zuerst. Ist sie fehlerhaft, bleibt alles unverändert. Danach wählen:</li>
+        <li><b>Hinzufügen</b>: bestehende Daten bleiben. Gleiche Einträge werden übersprungen; ein Eintrag, der hier schon existiert aber anders ist, wird als Kopie «(Import)» ergänzt. So lassen sich Übungen und Trainings mit anderen Coaches austauschen.</li>
+        <li><b>Alles ersetzen</b>: alle aktuellen Daten werden durch die Datei ersetzt; vorher wird ein Export angeboten.</li>
       </ul>
     ),
   },
@@ -54,7 +56,10 @@ const HELP = {
     body: (
       <ul>
         <li>Trainings sind nach Monat geordnet; vergangene Monate sind zugeklappt. Die Suche durchsucht Titel, Notizen und die enthaltenen Übungen; Filter nach Erscheinungsform und Schlüsselelement.</li>
-        <li>Status: <span className="status-badge draft">✎ Entwurf</span> = geplant, noch offen; <span className="status-badge final">✓ Definitiv</span> = festgelegt. Umschalten im Training.</li>
+        <li>Status: <span className="status-badge draft">✎ Entwurf</span> = geplant, noch offen; <span className="status-badge final">✓ Definitiv</span> = festgelegt; <span className="status-badge template">▤ Vorlage</span> = Vorlage. Umschalten im Training.</li>
+        <li><b>Vorlagen</b>: ein Training mit «Vorlage» markieren (z. B. typischer Ablauf Einwärmen → Posten → Spielform). Vorlagen stehen oben in eigenem Ordner und zählen nicht in der Auswertung. «Neues Training aus…» erstellt aus einer Vorlage oder einem früheren Training ein neues Training ohne Datum, als Entwurf. Mit «Ersetzen durch…» lässt sich pro Eintrag eine andere Übung einsetzen; Dauer und Notizen bleiben.</li>
+        <li><b>Bearbeiten</b> bei einem Eintrag öffnet die Übung im Editor. Speichern legt sie als neue <b>Variante</b> in der Bibliothek an (Titel mit «(Variante)», falls nicht umbenannt) und setzt sie in diesem Eintrag ein. Die Original-Übung und andere Trainings bleiben unverändert. Schliessen ohne Speichern ändert nichts.</li>
+        <li><b>Notizen zum Training</b> gelten für das ganze Training (z. B. Schwerpunkte, Key-Points Coach), erscheinen auf dem Trainingsblatt und werden durchsucht. Pro Übung gibt es zusätzlich eigene Notizen.</li>
         <li>Übungen werden als <b>Kopie</b> eingeplant: spätere Änderungen in der Bibliothek ändern ein Training nicht. Dieselbe Übung darf mehrmals vorkommen.</li>
         <li>Reihenfolge: am Griff ⠿ ziehen oder «Nach oben / Nach unten». Eine ungültige Dauer wird nicht übernommen.</li>
         <li><b>Drucken / PDF</b> erstellt ein Trainingsblatt mit Diagrammen und Legende (im Druckdialog «Als PDF sichern»).</li>

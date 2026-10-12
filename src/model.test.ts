@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { addEntries, categoryCollections, categoryMinutes, deleteDrill, selectSessions, filterDrills, filterSessions, isoWeek, periodStats, drillProblems, duplicateDrill, migrateDrill, moveIndex, newDrill, upsertDrill, validateDb } from './model'
+import { addEntries, categoryCollections, categoryMinutes, deleteDrill, fromTemplate, mergeDb, saveVariant, selectSessions, filterDrills, filterSessions, isoWeek, periodStats, drillProblems, duplicateDrill, migrateDrill, moveIndex, newDrill, upsertDrill, validateDb } from './model'
 import type { Db, Drill } from './types'
 
 const drill = (over: Partial<Drill> = {}): Drill => ({
@@ -34,7 +34,7 @@ function sample(): Db {
     version: 1,
     drills: [d],
     collections: [{ id: 'c', name: 'Passen', drillIds: [d.id] }],
-    sessions: [addEntries({ id: 's', title: 'Dienstag', date: '2026-10-13', entries: [] }, [d, d])],
+    sessions: [addEntries({ id: 's', title: 'Dienstag', date: '2026-10-13', notes: 'Fokus: Passen', entries: [] }, [d, d])],
   }
 }
 const roundTrip = (db: unknown) => validateDb(JSON.parse(JSON.stringify(db)))
@@ -137,4 +137,41 @@ test('categoryMinutes splits a drill\'s minutes across its Erscheinungsformen', 
   expect(rows).toHaveLength(9)
   expect(rows.find((r) => r.category === 'EF06')?.total).toBe(12) // 2 entries × 12 min, half each to EF06 and EF08
   expect(rows.reduce((sum, r) => sum + r.total, 0)).toBe(24)
+})
+
+test('mergeDb adds new records, skips identical ones and copies conflicting ones without overwriting', () => {
+  const mine = sample()
+  const theirs = structuredClone(mine)
+  theirs.drills[0].title = 'Geändert'
+  theirs.drills.push({ ...theirs.drills[0], id: 'new', title: 'Neu' })
+  theirs.collections[0].drillIds.push('new')
+  const { db, added, skipped } = mergeDb(mine, theirs)
+  expect(skipped).toBe(1) // the unchanged session
+  expect(added).toEqual({ drills: 2, collections: 1, sessions: 0 })
+  expect(db.drills.map((d) => d.title)).toEqual(['Give and Go', 'Geändert (Import)', 'Neu'])
+  expect(db.collections[0]).toEqual(mine.collections[0])
+  expect(db.collections[1].drillIds).toEqual([db.drills[1].id, 'new']) // points at the copy, not the original
+  expect(() => validateDb(JSON.parse(JSON.stringify(db)))).not.toThrow()
+  expect(mergeDb(mine, mine).skipped).toBe(3)
+})
+
+test('templates are reusable and stay out of the reports', () => {
+  const [s] = sample().sessions
+  const tpl = { ...s, id: 't', template: true, final: true }
+  const fresh = fromTemplate(tpl)
+  expect(fresh).toMatchObject({ title: s.title, date: undefined, template: undefined, final: undefined, notes: s.notes })
+  expect(fresh.id).not.toBe('t')
+  expect(fresh.entries.map((e) => e.id)).not.toEqual(s.entries.map((e) => e.id))
+  expect(selectSessions([s, tpl], '', '', '').map((x) => x.id)).toEqual([s.id])
+})
+
+test('saveVariant adds a new drill and changes only the edited entry', () => {
+  const db = sample()
+  const [first, second] = db.sessions[0].entries
+  const variant = { ...structuredClone(first.drill), id: 'v', title: 'Give and Go (Variante)', minutes: 15 }
+  const next = saveVariant(db, 's', first.id, variant)
+  expect(next.drills.map((d) => d.id)).toEqual([db.drills[0].id, 'v'])
+  expect(next.drills[0]).toEqual(db.drills[0])
+  expect(next.sessions[0].entries[0].drill.id).toBe('v')
+  expect(next.sessions[0].entries[1]).toEqual(second)
 })

@@ -52,6 +52,13 @@ export const migrateDb = (db: Db): Db => ({
 export const categoryCollections = (db: Db): Collection[] =>
   categories.map((c) => ({ id: c.id, name: c.label, drillIds: db.drills.filter((d) => d.categories.includes(c.id)).map((d) => d.id) }))
 
+// Saves an edited training entry as its own library drill and points only that entry at it.
+export const saveVariant = (db: Db, sessionId: string, entryId: string, d: Drill): Db => ({
+  ...upsertDrill(db, d),
+  sessions: db.sessions.map((s) =>
+    s.id !== sessionId ? s : { ...s, entries: s.entries.map((e) => (e.id === entryId ? { ...e, drill: structuredClone(d) } : e)) }),
+})
+
 export const upsertDrill = (db: Db, d: Drill): Db => ({
   ...db,
   drills: db.drills.some((x) => x.id === d.id) ? db.drills.map((x) => (x.id === d.id ? d : x)) : [...db.drills, d],
@@ -84,6 +91,43 @@ export const duplicateSession = (s: Session): Session => ({
   entries: s.entries.map((e) => ({ ...structuredClone(e), id: uid() })),
 })
 
+// Adds an imported backup to the current data without overwriting anything. Identical records (same id and
+// content) are skipped; a record whose id exists with different content is added as a copy «(Import)», and the
+// imported collections point at those copies.
+export function mergeDb(current: Db, incoming: Db) {
+  const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
+  const added = { drills: 0, collections: 0, sessions: 0 }
+  let skipped = 0
+  const drillIds = new Map<string, string>() // imported id -> id used here
+  function add<T extends { id: string }>(list: T[], items: T[], kind: keyof typeof added, rename: (x: T) => T, onCopy?: (from: string, to: string) => void) {
+    const out = [...list]
+    for (const x of items) {
+      const existing = list.find((y) => y.id === x.id)
+      if (existing && same(existing, x)) {
+        skipped++
+        continue
+      }
+      const copy = existing ? { ...rename(x), id: uid() } : x
+      if (existing) onCopy?.(x.id, copy.id)
+      out.push(copy)
+      added[kind]++
+    }
+    return out
+  }
+  const drills = add(current.drills, incoming.drills, 'drills', (d) => ({ ...d, title: `${d.title} (Import)` }), (from, to) => drillIds.set(from, to))
+  const collections = add(
+    current.collections,
+    incoming.collections.map((c) => ({ ...c, drillIds: c.drillIds.map((id) => drillIds.get(id) ?? id) })),
+    'collections',
+    (c) => ({ ...c, name: `${c.name} (Import)` }),
+  )
+  const sessions = add(current.sessions, incoming.sessions, 'sessions', (s) => ({ ...s, title: `${s.title} (Import)` }))
+  return { db: { ...current, drills, collections, sessions }, added, skipped }
+}
+
+// New training from a template or an earlier training: fresh ids, no date, starts as a plan.
+export const fromTemplate = (s: Session): Session => ({ ...duplicateSession(s), title: s.title, date: undefined, template: undefined })
+
 export const totalMinutes = (s: Session) => s.entries.reduce((sum, e) => sum + e.minutes, 0)
 
 export function moveIndex<T>(list: T[], from: number, to: number): T[] {
@@ -109,7 +153,7 @@ export function filterSessions(sessions: Session[], q: string, category: string,
   return sessions.filter(
     (s) =>
       (!(category || element) || s.entries.some((e) => tagged(e.drill, category, element))) &&
-      (has([s.title, ...s.entries.flatMap((e) => [e.notes, e.drill.title, e.drill.description, ...e.drill.keyPoints])], needle)),
+      (has([s.title, s.notes ?? '', ...s.entries.flatMap((e) => [e.notes, e.drill.title, e.drill.description, ...e.drill.keyPoints])], needle)),
   )
 }
 
@@ -125,9 +169,9 @@ export const monthLabel = (key: string) =>
   new Intl.DateTimeFormat('de-CH', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${key}-01T00:00:00Z`))
 
 export type StatusFilter = '' | 'final' | 'planned'
-// Dated trainings within [from, to] (inclusive, 'YYYY-MM-DD', empty = open) with the given status.
+// Dated trainings (not templates) within [from, to] (inclusive, 'YYYY-MM-DD', empty = open) with the given status.
 export const selectSessions = (sessions: Session[], status: StatusFilter, from: string, to: string) =>
-  sessions.filter((s) => s.date && (!from || s.date >= from) && (!to || s.date <= to) && (!status || (status === 'final') === !!s.final))
+  sessions.filter((s) => s.date && !s.template && (!from || s.date >= from) && (!to || s.date <= to) && (!status || (status === 'final') === !!s.final))
 
 // Minutes per Erscheinungsform and period. A drill with several Erscheinungsformen splits its minutes equally,
 // so the rows add up to the trainings' total; drills without one count under ''. All nine categories are listed.
@@ -229,7 +273,7 @@ export function validateDb(x: unknown): Db {
     need(c.drillIds.every((id) => drillIds.has(id)), `Sammlung ${i + 1}: verweist auf fehlende Übung`)
   })
   x.sessions.forEach((s, i) => {
-    need(isObj(s) && isStr(s.id) && isStr(s.title) && opt(s.date, isStr) && opt(s.final, (f) => typeof f === 'boolean') && Array.isArray(s.entries), `Training ${i + 1}: Felder fehlen`)
+    need(isObj(s) && isStr(s.id) && isStr(s.title) && opt(s.date, isStr) && opt(s.final, (f) => typeof f === 'boolean') && opt(s.notes, isStr) && opt(s.template, (t) => typeof t === 'boolean') && Array.isArray(s.entries), `Training ${i + 1}: Felder fehlen`)
     s.entries.forEach((e, j) => {
       const w = `Training ${i + 1}, Eintrag ${j + 1}`
       need(isObj(e) && isStr(e.id) && isNum(e.minutes) && e.minutes >= 0 && isStr(e.notes), `${w}: Felder fehlen`)
