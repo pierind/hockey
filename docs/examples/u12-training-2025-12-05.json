@@ -1,0 +1,1928 @@
+{
+  "version": 1,
+  "drills": [
+    {
+      "id": "808d420f-15a1-4367-8447-edbffd4314ec",
+      "title": "Fussball",
+      "description": "ca. 7 Minuten mit allen\nBlau gegen Weiss\nAlle Stöcke auf Spielerbank deponiert bevor aufs Eis\nEinwärmspiel mit Fokus auf Skating",
+      "keyPoints": [
+        "Fokus auf Skating"
+      ],
+      "categories": [
+        "EF03"
+      ],
+      "elements": [],
+      "offIce": false,
+      "draft": false,
+      "scene": {
+        "rink": "full",
+        "items": [
+          {
+            "id": "i1",
+            "kind": "goal",
+            "at": [
+              3.6,
+              15
+            ]
+          },
+          {
+            "id": "i2",
+            "kind": "goal",
+            "at": [
+              56.4,
+              15
+            ],
+            "rot": 180
+          }
+        ]
+      },
+      "updatedAt": "2026-10-11T20:57:37.615Z",
+      "minutes": 7
+    },
+    {
+      "id": "dc1b795b-9800-4db2-bf0a-92a326ea978c",
+      "title": "3 Stations - Crossover & Edgework",
+      "description": "Posten 1: Transition Game\n3 Teams bilden (2v2v2), 2 Teams im Drittel mit fixen Rollen (1 Team offensiv / 1 Team defensiv), 3. Team als neutrales Team am Spielfeldrand\nO-Team will Tor erzielen, D-Team verteidigt und spielt bei Punktgewinn N-Team an -> danach Rollenwechsel O->D, D->N, N->O\n\nPosten 2: Edgework Drill\nMit 2 Pylonen 3-4 Posten aufstellen (2 Kids pro Posten). V1: Einfacher Vorwärts-Rückwärts Drill mit Blick zur Mitte/Bande, V2: Wechsel von VW auf RW direkt wieder auf FW (Mohawk Bewegung), V3: VW-RW Drill mit Doppelpass einmal RW und einmal FW\nJe 1 Durchgang pro Kind 30-45 sec, danach Übung umkehren (sodass VW-RW und RW-VW Wechsel auf beide Seiten geübt werden)\n\nPosten 3: Crossover 2v2\nJe 2 F und 2D starten in die Übung auf Kommando Coach -> D hat den kurzen Weg. Coach spielt Puck in die Mitte. Danach 2v2. D dürfen erst angreifen wenn F puck berührt hat.",
+      "keyPoints": [
+        "Posten 1: Face the game, Basic Habits (Head Up, Stick on the Ice, Kommunikation)",
+        "Posten 1: Freistellen -> O-Team, Inside-Position & Gap Close -> D-Team",
+        "Posten 2: Basic Habits (Head up, Stick on the Ice), Hüfte öffnen (bei RW auf VW), Kanten verwenden für Richtungswechsel",
+        "Posten 3: Head up, Inside & Zuteilung (D), Netdrive (F)"
+      ],
+      "categories": [
+        "EF03",
+        "EF04",
+        "EF08",
+        "EF09"
+      ],
+      "elements": [
+        "D02",
+        "D07",
+        "E01",
+        "U01"
+      ],
+      "offIce": false,
+      "draft": false,
+      "scene": {
+        "rink": "full",
+        "items": [
+          {
+            "id": "i1",
+            "kind": "goal",
+            "at": [
+              3.6,
+              15
+            ]
+          },
+          {
+            "id": "i2",
+            "kind": "goal",
+            "at": [
+              56.4,
+              15
+            ],
+            "rot": 180
+          },
+          {
+            "id": "i3",
+            "kind": "text",
+            "at": [
+              6.6,
+              1.8
+            ],
+            "text": "1"
+          },
+          {
+            "id": "i4",
+            "kind": "text",
+            "at": [
+              23.2,
+              1.8
+            ],
+            "text": "2"
+          },
+          {
+            "id": "i5",
+            "kind": "text",
+            "at": [
+              41.2,
+              1.8
+            ],
+            "text": "3"
+          },
+          {
+            "id": "i6",
+            "kind": "defense",
+            "at": [
+              12.1,
+              10
+            ],
+            "label": "D1"
+          },
+          {
+            "id": "i7",
+            "kind": "offense",
+            "at": [
+              14.1,
+              10
+            ],
+            "label": "F1"
+          },
+          {
+            "id": "i8",
+            "kind": "defense",
+            "at": [
+              12.1,
+              18.7
+            ],
+            "label": "D1"
+          },
+          {
+            "id": "i9",
+            "kind": "offense",
+            "at": [
+              14.1,
+              18.7
+            ],
+            "label": "F1"
+          },
+          {
+            "id": "i10",
+            "kind": "offense",
+            "at": [
+              12.5,
+              28
+            ],
+            "label": "N"
+          },
+          {
+            "id": "i11",
+            "kind": "offense",
+            "at": [
+              14.5,
+              28
+            ],
+            "label": "N"
+          },
+          {
+            "id": "i12",
+            "kind": "toblerone",
+            "at": [
+              17.6,
+              3.6
+            ],
+            "rot": 90
+          },
+          {
+            "id": "i13",
+            "kind": "toblerone",
+            "at": [
+              17.6,
+              13.8
+            ],
+            "rot": 90
+          },
+          {
+            "id": "i14",
+            "kind": "toblerone",
+            "at": [
+              17.6,
+              25.2
+            ],
+            "rot": 90
+          },
+          {
+            "id": "i15",
+            "kind": "text",
+            "at": [
+              23.4,
+              17.4
+            ],
+            "text": "V1"
+          },
+          {
+            "id": "i16",
+            "kind": "text",
+            "at": [
+              31.4,
+              16.8
+            ],
+            "text": "V2"
+          },
+          {
+            "id": "i17",
+            "kind": "text",
+            "at": [
+              28.4,
+              5.2
+            ],
+            "text": "V3"
+          },
+          {
+            "id": "i18",
+            "kind": "cone",
+            "at": [
+              25.1,
+              21.4
+            ]
+          },
+          {
+            "id": "i19",
+            "kind": "cone",
+            "at": [
+              25.1,
+              27.5
+            ]
+          },
+          {
+            "id": "i20",
+            "kind": "cone",
+            "at": [
+              34.4,
+              20.6
+            ]
+          },
+          {
+            "id": "i21",
+            "kind": "cone",
+            "at": [
+              34.4,
+              27
+            ]
+          },
+          {
+            "id": "i22",
+            "kind": "cone",
+            "at": [
+              34.6,
+              2.5
+            ]
+          },
+          {
+            "id": "i23",
+            "kind": "cone",
+            "at": [
+              34.6,
+              9.9
+            ]
+          },
+          {
+            "id": "i24",
+            "kind": "route",
+            "style": "forward",
+            "from": [
+              23.4,
+              19.6
+            ],
+            "to": [
+              25.8,
+              29
+            ],
+            "via": [
+              [
+                26.8,
+                21.4
+              ],
+              [
+                25.1,
+                24.4
+              ],
+              [
+                23.4,
+                27.4
+              ]
+            ]
+          },
+          {
+            "id": "i25",
+            "kind": "route",
+            "style": "backward",
+            "from": [
+              27.4,
+              28.4
+            ],
+            "to": [
+              24.6,
+              19.6
+            ],
+            "via": [
+              [
+                27.6,
+                24.6
+              ],
+              [
+                23.4,
+                23
+              ],
+              [
+                23.2,
+                21.4
+              ]
+            ]
+          },
+          {
+            "id": "i26",
+            "kind": "route",
+            "style": "forward",
+            "from": [
+              32.4,
+              18.4
+            ],
+            "to": [
+              33.4,
+              29.2
+            ],
+            "via": [
+              [
+                32.6,
+                21.2
+              ],
+              [
+                36.2,
+                23.2
+              ],
+              [
+                36.2,
+                26.2
+              ],
+              [
+                32.6,
+                27.6
+              ]
+            ]
+          },
+          {
+            "id": "i27",
+            "kind": "route",
+            "style": "backward",
+            "from": [
+              36.6,
+              28.6
+            ],
+            "to": [
+              32.8,
+              20.6
+            ],
+            "via": [
+              [
+                37,
+                25.4
+              ],
+              [
+                32.6,
+                23.8
+              ]
+            ]
+          },
+          {
+            "id": "i28",
+            "kind": "offense",
+            "at": [
+              30,
+              1.5
+            ],
+            "label": "F1"
+          },
+          {
+            "id": "i29",
+            "kind": "route",
+            "style": "pass",
+            "from": [
+              30.6,
+              2.2
+            ],
+            "to": [
+              33.2,
+              6.2
+            ]
+          },
+          {
+            "id": "i30",
+            "kind": "route",
+            "style": "pass",
+            "from": [
+              30.4,
+              2.4
+            ],
+            "to": [
+              33.6,
+              11.2
+            ]
+          },
+          {
+            "id": "i31",
+            "kind": "route",
+            "style": "backward",
+            "from": [
+              32.3,
+              1.8
+            ],
+            "to": [
+              35.5,
+              12.6
+            ],
+            "via": [
+              [
+                36.3,
+                2.6
+              ],
+              [
+                36.4,
+                5.6
+              ],
+              [
+                33.2,
+                6.4
+              ],
+              [
+                32.8,
+                8.8
+              ],
+              [
+                36.3,
+                10.2
+              ]
+            ]
+          },
+          {
+            "id": "i32",
+            "kind": "route",
+            "style": "forward",
+            "from": [
+              37,
+              11.6
+            ],
+            "to": [
+              36.6,
+              1.8
+            ],
+            "via": [
+              [
+                37.3,
+                7
+              ]
+            ]
+          },
+          {
+            "id": "i33",
+            "kind": "toblerone",
+            "at": [
+              39,
+              3.1
+            ],
+            "rot": 90
+          },
+          {
+            "id": "i34",
+            "kind": "toblerone",
+            "at": [
+              39,
+              13.8
+            ],
+            "rot": 90
+          },
+          {
+            "id": "i35",
+            "kind": "toblerone",
+            "at": [
+              39,
+              25.2
+            ],
+            "rot": 90
+          },
+          {
+            "id": "i36",
+            "kind": "defense",
+            "at": [
+              40.6,
+              6.8
+            ],
+            "label": "D1"
+          },
+          {
+            "id": "i37",
+            "kind": "defense",
+            "at": [
+              43,
+              6.8
+            ],
+            "label": "D1"
+          },
+          {
+            "id": "i38",
+            "kind": "offense",
+            "at": [
+              40.6,
+              9.8
+            ],
+            "label": "F1"
+          },
+          {
+            "id": "i39",
+            "kind": "offense",
+            "at": [
+              43,
+              9.8
+            ],
+            "label": "F1"
+          },
+          {
+            "id": "i40",
+            "kind": "offense",
+            "at": [
+              40.6,
+              18
+            ],
+            "label": "F1"
+          },
+          {
+            "id": "i41",
+            "kind": "offense",
+            "at": [
+              43,
+              18
+            ],
+            "label": "F1"
+          },
+          {
+            "id": "i42",
+            "kind": "defense",
+            "at": [
+              40.6,
+              21
+            ],
+            "label": "D1"
+          },
+          {
+            "id": "i43",
+            "kind": "defense",
+            "at": [
+              43,
+              21
+            ],
+            "label": "D1"
+          },
+          {
+            "id": "i44",
+            "kind": "coach",
+            "at": [
+              42,
+              13.8
+            ]
+          },
+          {
+            "id": "i45",
+            "kind": "pucks",
+            "at": [
+              44.2,
+              13.8
+            ]
+          },
+          {
+            "id": "i46",
+            "kind": "puck",
+            "at": [
+              50.1,
+              14.4
+            ]
+          },
+          {
+            "id": "i47",
+            "kind": "route",
+            "style": "forward",
+            "from": [
+              43.8,
+              9.6
+            ],
+            "to": [
+              50.6,
+              13.6
+            ],
+            "via": [
+              [
+                44.4,
+                5.4
+              ],
+              [
+                47,
+                3.2
+              ],
+              [
+                51,
+                2.6
+              ],
+              [
+                54.6,
+                4.6
+              ],
+              [
+                55.2,
+                8.6
+              ],
+              [
+                53,
+                12
+              ]
+            ]
+          },
+          {
+            "id": "i48",
+            "kind": "route",
+            "style": "forward",
+            "from": [
+              43.9,
+              7.2
+            ],
+            "to": [
+              49.4,
+              13.4
+            ]
+          },
+          {
+            "id": "i49",
+            "kind": "route",
+            "style": "forward",
+            "from": [
+              43.8,
+              18.4
+            ],
+            "to": [
+              50.6,
+              15.2
+            ],
+            "via": [
+              [
+                44.4,
+                24.6
+              ],
+              [
+                47,
+                27
+              ],
+              [
+                51,
+                27.4
+              ],
+              [
+                54.6,
+                25.4
+              ],
+              [
+                55.2,
+                21.4
+              ],
+              [
+                53,
+                17.8
+              ]
+            ]
+          },
+          {
+            "id": "i50",
+            "kind": "route",
+            "style": "forward",
+            "from": [
+              43.9,
+              20.6
+            ],
+            "to": [
+              49.4,
+              15.4
+            ]
+          },
+          {
+            "id": "i51",
+            "kind": "route",
+            "style": "pass",
+            "from": [
+              45,
+              13.9
+            ],
+            "to": [
+              49.4,
+              14.3
+            ]
+          }
+        ]
+      },
+      "updatedAt": "2026-10-11T20:57:37.615Z",
+      "primary": "EF03",
+      "minutes": 40
+    },
+    {
+      "id": "d9f7e0a2-2046-4aec-a87f-97fc9a1ddd59",
+      "title": "Quer 3v3",
+      "description": "Quer 3v3 mit fliegendem Wechsel\nAuf kleine oder gekippte Tore",
+      "keyPoints": [
+        "Fliegender Wechsel"
+      ],
+      "categories": [
+        "EF06",
+        "EF07"
+      ],
+      "elements": [],
+      "offIce": false,
+      "draft": false,
+      "scene": {
+        "rink": "full",
+        "items": [
+          {
+            "id": "i52",
+            "kind": "goal",
+            "at": [
+              10.3,
+              2.6
+            ],
+            "rot": 90
+          },
+          {
+            "id": "i53",
+            "kind": "goal",
+            "at": [
+              10.3,
+              27.4
+            ],
+            "rot": 270
+          },
+          {
+            "id": "i54",
+            "kind": "goal",
+            "at": [
+              30.1,
+              2.6
+            ],
+            "rot": 90
+          },
+          {
+            "id": "i55",
+            "kind": "goal",
+            "at": [
+              30.1,
+              27.4
+            ],
+            "rot": 270
+          },
+          {
+            "id": "i56",
+            "kind": "goal",
+            "at": [
+              50.1,
+              2.6
+            ],
+            "rot": 90
+          },
+          {
+            "id": "i57",
+            "kind": "goal",
+            "at": [
+              50.1,
+              27.4
+            ],
+            "rot": 270
+          },
+          {
+            "id": "i58",
+            "kind": "toblerone",
+            "at": [
+              22.5,
+              4
+            ],
+            "rot": 90
+          },
+          {
+            "id": "i59",
+            "kind": "toblerone",
+            "at": [
+              22.5,
+              12.5
+            ],
+            "rot": 90
+          },
+          {
+            "id": "i60",
+            "kind": "toblerone",
+            "at": [
+              22.5,
+              21
+            ],
+            "rot": 90
+          },
+          {
+            "id": "i61",
+            "kind": "toblerone",
+            "at": [
+              37.5,
+              4
+            ],
+            "rot": 90
+          },
+          {
+            "id": "i62",
+            "kind": "toblerone",
+            "at": [
+              37.5,
+              12.5
+            ],
+            "rot": 90
+          },
+          {
+            "id": "i63",
+            "kind": "toblerone",
+            "at": [
+              37.5,
+              21
+            ],
+            "rot": 90
+          }
+        ]
+      },
+      "updatedAt": "2026-10-11T20:57:37.615Z",
+      "primary": "EF06",
+      "minutes": 20
+    },
+    {
+      "id": "63b67c4f-f2f2-4947-9feb-a5080570364b",
+      "title": "Off-Ice Start - Begrüssung & AWK",
+      "description": "START (sofern Off-Ice vor On-Ice)\nBegrüssung & Anwesenheitskontrolle (AWK)",
+      "keyPoints": [],
+      "categories": [],
+      "elements": [],
+      "offIce": true,
+      "draft": true,
+      "scene": {
+        "rink": "full",
+        "items": []
+      },
+      "updatedAt": "2026-10-11T20:57:37.615Z",
+      "minutes": 5
+    },
+    {
+      "id": "05290601-f678-4e08-8ed4-459c3cc3ae3f",
+      "title": "Off-Ice Station 1 - Mobilität",
+      "description": "Verschiedene statische & dynamische Übungen gem. Anhang",
+      "keyPoints": [],
+      "categories": [
+        "EF01"
+      ],
+      "elements": [
+        "B01"
+      ],
+      "offIce": true,
+      "draft": true,
+      "scene": {
+        "rink": "full",
+        "items": []
+      },
+      "updatedAt": "2026-10-11T20:57:37.615Z",
+      "minutes": 12
+    },
+    {
+      "id": "a5e37ee6-e3e8-4de7-8857-759f5ed36f3a",
+      "title": "Off-Ice Station 2 - Kraft",
+      "description": "Verschiede Rumpfübungen gem. Anhang\nZweikampfformen (Battles in Liegestützposition, etc.)",
+      "keyPoints": [],
+      "categories": [
+        "EF01",
+        "EF09"
+      ],
+      "elements": [
+        "B03"
+      ],
+      "offIce": true,
+      "draft": true,
+      "scene": {
+        "rink": "full",
+        "items": []
+      },
+      "updatedAt": "2026-10-11T20:57:37.615Z",
+      "primary": "EF01",
+      "minutes": 12
+    },
+    {
+      "id": "770ae8d6-cae2-445d-965e-ea9eb37dc18b",
+      "title": "Off-Ice Station 3 - Sprungschule",
+      "description": "Verschiede Sprungformen (horizontal & vertikal -> geradlinig, auf & ab)\nJede Form wird jeweils 2-4x wiederholt\n- Beidbeinig (vorwärts), Beidbeinig (seitlich)\n- Einbeinig (vorwärts), Einbeinig (seitlich)\n- Einbeinig abwechselnd (diagonal)\n- Einbeinig Weitsprünge während Sprint",
+      "keyPoints": [],
+      "categories": [
+        "EF01"
+      ],
+      "elements": [
+        "B04"
+      ],
+      "offIce": true,
+      "draft": true,
+      "scene": {
+        "rink": "full",
+        "items": []
+      },
+      "updatedAt": "2026-10-11T20:57:37.615Z",
+      "minutes": 12
+    },
+    {
+      "id": "b34d3b0b-76bc-431b-9c6b-0de26e671b25",
+      "title": "Off-Ice Cool Down",
+      "description": "Entspannungsübung u/o Verabschiedung",
+      "keyPoints": [],
+      "categories": [],
+      "elements": [],
+      "offIce": true,
+      "draft": true,
+      "scene": {
+        "rink": "full",
+        "items": []
+      },
+      "updatedAt": "2026-10-11T20:57:37.615Z",
+      "minutes": 5
+    }
+  ],
+  "collections": [],
+  "sessions": [
+    {
+      "id": "9b6a8204-753c-4427-b525-610e04702afb",
+      "title": "U12 On-Ice",
+      "date": "2025-12-05",
+      "entries": [
+        {
+          "id": "9e285be9-a203-4a0f-9944-3cabba9689ae",
+          "drill": {
+            "id": "808d420f-15a1-4367-8447-edbffd4314ec",
+            "title": "Fussball",
+            "description": "ca. 7 Minuten mit allen\nBlau gegen Weiss\nAlle Stöcke auf Spielerbank deponiert bevor aufs Eis\nEinwärmspiel mit Fokus auf Skating",
+            "keyPoints": [
+              "Fokus auf Skating"
+            ],
+            "categories": [
+              "EF03"
+            ],
+            "elements": [],
+            "offIce": false,
+            "draft": false,
+            "scene": {
+              "rink": "full",
+              "items": [
+                {
+                  "id": "i1",
+                  "kind": "goal",
+                  "at": [
+                    3.6,
+                    15
+                  ]
+                },
+                {
+                  "id": "i2",
+                  "kind": "goal",
+                  "at": [
+                    56.4,
+                    15
+                  ],
+                  "rot": 180
+                }
+              ]
+            },
+            "updatedAt": "2026-10-11T20:57:37.615Z",
+            "minutes": 7
+          },
+          "minutes": 7,
+          "notes": ""
+        },
+        {
+          "id": "3f5f0790-8419-4c0b-b275-a89049c78e8a",
+          "drill": {
+            "id": "dc1b795b-9800-4db2-bf0a-92a326ea978c",
+            "title": "3 Stations - Crossover & Edgework",
+            "description": "Posten 1: Transition Game\n3 Teams bilden (2v2v2), 2 Teams im Drittel mit fixen Rollen (1 Team offensiv / 1 Team defensiv), 3. Team als neutrales Team am Spielfeldrand\nO-Team will Tor erzielen, D-Team verteidigt und spielt bei Punktgewinn N-Team an -> danach Rollenwechsel O->D, D->N, N->O\n\nPosten 2: Edgework Drill\nMit 2 Pylonen 3-4 Posten aufstellen (2 Kids pro Posten). V1: Einfacher Vorwärts-Rückwärts Drill mit Blick zur Mitte/Bande, V2: Wechsel von VW auf RW direkt wieder auf FW (Mohawk Bewegung), V3: VW-RW Drill mit Doppelpass einmal RW und einmal FW\nJe 1 Durchgang pro Kind 30-45 sec, danach Übung umkehren (sodass VW-RW und RW-VW Wechsel auf beide Seiten geübt werden)\n\nPosten 3: Crossover 2v2\nJe 2 F und 2D starten in die Übung auf Kommando Coach -> D hat den kurzen Weg. Coach spielt Puck in die Mitte. Danach 2v2. D dürfen erst angreifen wenn F puck berührt hat.",
+            "keyPoints": [
+              "Posten 1: Face the game, Basic Habits (Head Up, Stick on the Ice, Kommunikation)",
+              "Posten 1: Freistellen -> O-Team, Inside-Position & Gap Close -> D-Team",
+              "Posten 2: Basic Habits (Head up, Stick on the Ice), Hüfte öffnen (bei RW auf VW), Kanten verwenden für Richtungswechsel",
+              "Posten 3: Head up, Inside & Zuteilung (D), Netdrive (F)"
+            ],
+            "categories": [
+              "EF03",
+              "EF04",
+              "EF08",
+              "EF09"
+            ],
+            "elements": [
+              "D02",
+              "D07",
+              "E01",
+              "U01"
+            ],
+            "offIce": false,
+            "draft": false,
+            "scene": {
+              "rink": "full",
+              "items": [
+                {
+                  "id": "i1",
+                  "kind": "goal",
+                  "at": [
+                    3.6,
+                    15
+                  ]
+                },
+                {
+                  "id": "i2",
+                  "kind": "goal",
+                  "at": [
+                    56.4,
+                    15
+                  ],
+                  "rot": 180
+                },
+                {
+                  "id": "i3",
+                  "kind": "text",
+                  "at": [
+                    6.6,
+                    1.8
+                  ],
+                  "text": "1"
+                },
+                {
+                  "id": "i4",
+                  "kind": "text",
+                  "at": [
+                    23.2,
+                    1.8
+                  ],
+                  "text": "2"
+                },
+                {
+                  "id": "i5",
+                  "kind": "text",
+                  "at": [
+                    41.2,
+                    1.8
+                  ],
+                  "text": "3"
+                },
+                {
+                  "id": "i6",
+                  "kind": "defense",
+                  "at": [
+                    12.1,
+                    10
+                  ],
+                  "label": "D1"
+                },
+                {
+                  "id": "i7",
+                  "kind": "offense",
+                  "at": [
+                    14.1,
+                    10
+                  ],
+                  "label": "F1"
+                },
+                {
+                  "id": "i8",
+                  "kind": "defense",
+                  "at": [
+                    12.1,
+                    18.7
+                  ],
+                  "label": "D1"
+                },
+                {
+                  "id": "i9",
+                  "kind": "offense",
+                  "at": [
+                    14.1,
+                    18.7
+                  ],
+                  "label": "F1"
+                },
+                {
+                  "id": "i10",
+                  "kind": "offense",
+                  "at": [
+                    12.5,
+                    28
+                  ],
+                  "label": "N"
+                },
+                {
+                  "id": "i11",
+                  "kind": "offense",
+                  "at": [
+                    14.5,
+                    28
+                  ],
+                  "label": "N"
+                },
+                {
+                  "id": "i12",
+                  "kind": "toblerone",
+                  "at": [
+                    17.6,
+                    3.6
+                  ],
+                  "rot": 90
+                },
+                {
+                  "id": "i13",
+                  "kind": "toblerone",
+                  "at": [
+                    17.6,
+                    13.8
+                  ],
+                  "rot": 90
+                },
+                {
+                  "id": "i14",
+                  "kind": "toblerone",
+                  "at": [
+                    17.6,
+                    25.2
+                  ],
+                  "rot": 90
+                },
+                {
+                  "id": "i15",
+                  "kind": "text",
+                  "at": [
+                    23.4,
+                    17.4
+                  ],
+                  "text": "V1"
+                },
+                {
+                  "id": "i16",
+                  "kind": "text",
+                  "at": [
+                    31.4,
+                    16.8
+                  ],
+                  "text": "V2"
+                },
+                {
+                  "id": "i17",
+                  "kind": "text",
+                  "at": [
+                    28.4,
+                    5.2
+                  ],
+                  "text": "V3"
+                },
+                {
+                  "id": "i18",
+                  "kind": "cone",
+                  "at": [
+                    25.1,
+                    21.4
+                  ]
+                },
+                {
+                  "id": "i19",
+                  "kind": "cone",
+                  "at": [
+                    25.1,
+                    27.5
+                  ]
+                },
+                {
+                  "id": "i20",
+                  "kind": "cone",
+                  "at": [
+                    34.4,
+                    20.6
+                  ]
+                },
+                {
+                  "id": "i21",
+                  "kind": "cone",
+                  "at": [
+                    34.4,
+                    27
+                  ]
+                },
+                {
+                  "id": "i22",
+                  "kind": "cone",
+                  "at": [
+                    34.6,
+                    2.5
+                  ]
+                },
+                {
+                  "id": "i23",
+                  "kind": "cone",
+                  "at": [
+                    34.6,
+                    9.9
+                  ]
+                },
+                {
+                  "id": "i24",
+                  "kind": "route",
+                  "style": "forward",
+                  "from": [
+                    23.4,
+                    19.6
+                  ],
+                  "to": [
+                    25.8,
+                    29
+                  ],
+                  "via": [
+                    [
+                      26.8,
+                      21.4
+                    ],
+                    [
+                      25.1,
+                      24.4
+                    ],
+                    [
+                      23.4,
+                      27.4
+                    ]
+                  ]
+                },
+                {
+                  "id": "i25",
+                  "kind": "route",
+                  "style": "backward",
+                  "from": [
+                    27.4,
+                    28.4
+                  ],
+                  "to": [
+                    24.6,
+                    19.6
+                  ],
+                  "via": [
+                    [
+                      27.6,
+                      24.6
+                    ],
+                    [
+                      23.4,
+                      23
+                    ],
+                    [
+                      23.2,
+                      21.4
+                    ]
+                  ]
+                },
+                {
+                  "id": "i26",
+                  "kind": "route",
+                  "style": "forward",
+                  "from": [
+                    32.4,
+                    18.4
+                  ],
+                  "to": [
+                    33.4,
+                    29.2
+                  ],
+                  "via": [
+                    [
+                      32.6,
+                      21.2
+                    ],
+                    [
+                      36.2,
+                      23.2
+                    ],
+                    [
+                      36.2,
+                      26.2
+                    ],
+                    [
+                      32.6,
+                      27.6
+                    ]
+                  ]
+                },
+                {
+                  "id": "i27",
+                  "kind": "route",
+                  "style": "backward",
+                  "from": [
+                    36.6,
+                    28.6
+                  ],
+                  "to": [
+                    32.8,
+                    20.6
+                  ],
+                  "via": [
+                    [
+                      37,
+                      25.4
+                    ],
+                    [
+                      32.6,
+                      23.8
+                    ]
+                  ]
+                },
+                {
+                  "id": "i28",
+                  "kind": "offense",
+                  "at": [
+                    30,
+                    1.5
+                  ],
+                  "label": "F1"
+                },
+                {
+                  "id": "i29",
+                  "kind": "route",
+                  "style": "pass",
+                  "from": [
+                    30.6,
+                    2.2
+                  ],
+                  "to": [
+                    33.2,
+                    6.2
+                  ]
+                },
+                {
+                  "id": "i30",
+                  "kind": "route",
+                  "style": "pass",
+                  "from": [
+                    30.4,
+                    2.4
+                  ],
+                  "to": [
+                    33.6,
+                    11.2
+                  ]
+                },
+                {
+                  "id": "i31",
+                  "kind": "route",
+                  "style": "backward",
+                  "from": [
+                    32.3,
+                    1.8
+                  ],
+                  "to": [
+                    35.5,
+                    12.6
+                  ],
+                  "via": [
+                    [
+                      36.3,
+                      2.6
+                    ],
+                    [
+                      36.4,
+                      5.6
+                    ],
+                    [
+                      33.2,
+                      6.4
+                    ],
+                    [
+                      32.8,
+                      8.8
+                    ],
+                    [
+                      36.3,
+                      10.2
+                    ]
+                  ]
+                },
+                {
+                  "id": "i32",
+                  "kind": "route",
+                  "style": "forward",
+                  "from": [
+                    37,
+                    11.6
+                  ],
+                  "to": [
+                    36.6,
+                    1.8
+                  ],
+                  "via": [
+                    [
+                      37.3,
+                      7
+                    ]
+                  ]
+                },
+                {
+                  "id": "i33",
+                  "kind": "toblerone",
+                  "at": [
+                    39,
+                    3.1
+                  ],
+                  "rot": 90
+                },
+                {
+                  "id": "i34",
+                  "kind": "toblerone",
+                  "at": [
+                    39,
+                    13.8
+                  ],
+                  "rot": 90
+                },
+                {
+                  "id": "i35",
+                  "kind": "toblerone",
+                  "at": [
+                    39,
+                    25.2
+                  ],
+                  "rot": 90
+                },
+                {
+                  "id": "i36",
+                  "kind": "defense",
+                  "at": [
+                    40.6,
+                    6.8
+                  ],
+                  "label": "D1"
+                },
+                {
+                  "id": "i37",
+                  "kind": "defense",
+                  "at": [
+                    43,
+                    6.8
+                  ],
+                  "label": "D1"
+                },
+                {
+                  "id": "i38",
+                  "kind": "offense",
+                  "at": [
+                    40.6,
+                    9.8
+                  ],
+                  "label": "F1"
+                },
+                {
+                  "id": "i39",
+                  "kind": "offense",
+                  "at": [
+                    43,
+                    9.8
+                  ],
+                  "label": "F1"
+                },
+                {
+                  "id": "i40",
+                  "kind": "offense",
+                  "at": [
+                    40.6,
+                    18
+                  ],
+                  "label": "F1"
+                },
+                {
+                  "id": "i41",
+                  "kind": "offense",
+                  "at": [
+                    43,
+                    18
+                  ],
+                  "label": "F1"
+                },
+                {
+                  "id": "i42",
+                  "kind": "defense",
+                  "at": [
+                    40.6,
+                    21
+                  ],
+                  "label": "D1"
+                },
+                {
+                  "id": "i43",
+                  "kind": "defense",
+                  "at": [
+                    43,
+                    21
+                  ],
+                  "label": "D1"
+                },
+                {
+                  "id": "i44",
+                  "kind": "coach",
+                  "at": [
+                    42,
+                    13.8
+                  ]
+                },
+                {
+                  "id": "i45",
+                  "kind": "pucks",
+                  "at": [
+                    44.2,
+                    13.8
+                  ]
+                },
+                {
+                  "id": "i46",
+                  "kind": "puck",
+                  "at": [
+                    50.1,
+                    14.4
+                  ]
+                },
+                {
+                  "id": "i47",
+                  "kind": "route",
+                  "style": "forward",
+                  "from": [
+                    43.8,
+                    9.6
+                  ],
+                  "to": [
+                    50.6,
+                    13.6
+                  ],
+                  "via": [
+                    [
+                      44.4,
+                      5.4
+                    ],
+                    [
+                      47,
+                      3.2
+                    ],
+                    [
+                      51,
+                      2.6
+                    ],
+                    [
+                      54.6,
+                      4.6
+                    ],
+                    [
+                      55.2,
+                      8.6
+                    ],
+                    [
+                      53,
+                      12
+                    ]
+                  ]
+                },
+                {
+                  "id": "i48",
+                  "kind": "route",
+                  "style": "forward",
+                  "from": [
+                    43.9,
+                    7.2
+                  ],
+                  "to": [
+                    49.4,
+                    13.4
+                  ]
+                },
+                {
+                  "id": "i49",
+                  "kind": "route",
+                  "style": "forward",
+                  "from": [
+                    43.8,
+                    18.4
+                  ],
+                  "to": [
+                    50.6,
+                    15.2
+                  ],
+                  "via": [
+                    [
+                      44.4,
+                      24.6
+                    ],
+                    [
+                      47,
+                      27
+                    ],
+                    [
+                      51,
+                      27.4
+                    ],
+                    [
+                      54.6,
+                      25.4
+                    ],
+                    [
+                      55.2,
+                      21.4
+                    ],
+                    [
+                      53,
+                      17.8
+                    ]
+                  ]
+                },
+                {
+                  "id": "i50",
+                  "kind": "route",
+                  "style": "forward",
+                  "from": [
+                    43.9,
+                    20.6
+                  ],
+                  "to": [
+                    49.4,
+                    15.4
+                  ]
+                },
+                {
+                  "id": "i51",
+                  "kind": "route",
+                  "style": "pass",
+                  "from": [
+                    45,
+                    13.9
+                  ],
+                  "to": [
+                    49.4,
+                    14.3
+                  ]
+                }
+              ]
+            },
+            "updatedAt": "2026-10-11T20:57:37.615Z",
+            "primary": "EF03",
+            "minutes": 40
+          },
+          "minutes": 40,
+          "notes": ""
+        },
+        {
+          "id": "8a625e87-b988-47df-9ee9-4cfcd45ac3cd",
+          "drill": {
+            "id": "d9f7e0a2-2046-4aec-a87f-97fc9a1ddd59",
+            "title": "Quer 3v3",
+            "description": "Quer 3v3 mit fliegendem Wechsel\nAuf kleine oder gekippte Tore",
+            "keyPoints": [
+              "Fliegender Wechsel"
+            ],
+            "categories": [
+              "EF06",
+              "EF07"
+            ],
+            "elements": [],
+            "offIce": false,
+            "draft": false,
+            "scene": {
+              "rink": "full",
+              "items": [
+                {
+                  "id": "i52",
+                  "kind": "goal",
+                  "at": [
+                    10.3,
+                    2.6
+                  ],
+                  "rot": 90
+                },
+                {
+                  "id": "i53",
+                  "kind": "goal",
+                  "at": [
+                    10.3,
+                    27.4
+                  ],
+                  "rot": 270
+                },
+                {
+                  "id": "i54",
+                  "kind": "goal",
+                  "at": [
+                    30.1,
+                    2.6
+                  ],
+                  "rot": 90
+                },
+                {
+                  "id": "i55",
+                  "kind": "goal",
+                  "at": [
+                    30.1,
+                    27.4
+                  ],
+                  "rot": 270
+                },
+                {
+                  "id": "i56",
+                  "kind": "goal",
+                  "at": [
+                    50.1,
+                    2.6
+                  ],
+                  "rot": 90
+                },
+                {
+                  "id": "i57",
+                  "kind": "goal",
+                  "at": [
+                    50.1,
+                    27.4
+                  ],
+                  "rot": 270
+                },
+                {
+                  "id": "i58",
+                  "kind": "toblerone",
+                  "at": [
+                    22.5,
+                    4
+                  ],
+                  "rot": 90
+                },
+                {
+                  "id": "i59",
+                  "kind": "toblerone",
+                  "at": [
+                    22.5,
+                    12.5
+                  ],
+                  "rot": 90
+                },
+                {
+                  "id": "i60",
+                  "kind": "toblerone",
+                  "at": [
+                    22.5,
+                    21
+                  ],
+                  "rot": 90
+                },
+                {
+                  "id": "i61",
+                  "kind": "toblerone",
+                  "at": [
+                    37.5,
+                    4
+                  ],
+                  "rot": 90
+                },
+                {
+                  "id": "i62",
+                  "kind": "toblerone",
+                  "at": [
+                    37.5,
+                    12.5
+                  ],
+                  "rot": 90
+                },
+                {
+                  "id": "i63",
+                  "kind": "toblerone",
+                  "at": [
+                    37.5,
+                    21
+                  ],
+                  "rot": 90
+                }
+              ]
+            },
+            "updatedAt": "2026-10-11T20:57:37.615Z",
+            "primary": "EF06",
+            "minutes": 20
+          },
+          "minutes": 20,
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "id": "915afaf7-4969-4823-8991-c312c11e5ce7",
+      "title": "U12 Off-Ice",
+      "date": "2025-12-05",
+      "entries": [
+        {
+          "id": "30b9adde-22a2-4abd-8a7d-27ae29c7c7eb",
+          "drill": {
+            "id": "63b67c4f-f2f2-4947-9feb-a5080570364b",
+            "title": "Off-Ice Start - Begrüssung & AWK",
+            "description": "START (sofern Off-Ice vor On-Ice)\nBegrüssung & Anwesenheitskontrolle (AWK)",
+            "keyPoints": [],
+            "categories": [],
+            "elements": [],
+            "offIce": true,
+            "draft": true,
+            "scene": {
+              "rink": "full",
+              "items": []
+            },
+            "updatedAt": "2026-10-11T20:57:37.615Z",
+            "minutes": 5
+          },
+          "minutes": 5,
+          "notes": "Schwerpunkte: Mobilität, Kraft, Sprünge, Schnelligkeit oder Koordination. Brücken zu Playbook oder Eishockey (z.B. Antritt, Schwungbewegungen, Battles, etc.)\nKey-Points Coach: Anstand / Respekt / Ehrlichkeit. Beobachten, Beurteilen, Beraten, Anleiten, Motivieren, Animieren, Vorleben (Aktive Teilnahme). LOBEN vor Kritisieren / Kindgerechtes Feedback. Hört nicht nur hin, HÖRT ZU / Schaut nicht nur hin, SCHAUT ZU"
+        },
+        {
+          "id": "b908248c-ef33-4243-af36-9535653decc4",
+          "drill": {
+            "id": "05290601-f678-4e08-8ed4-459c3cc3ae3f",
+            "title": "Off-Ice Station 1 - Mobilität",
+            "description": "Verschiedene statische & dynamische Übungen gem. Anhang",
+            "keyPoints": [],
+            "categories": [
+              "EF01"
+            ],
+            "elements": [
+              "B01"
+            ],
+            "offIce": true,
+            "draft": true,
+            "scene": {
+              "rink": "full",
+              "items": []
+            },
+            "updatedAt": "2026-10-11T20:57:37.615Z",
+            "minutes": 12
+          },
+          "minutes": 12,
+          "notes": "Stationen 40': Es werden 3 Gruppen gebildet. Jeder/Jede Gruppenleiter:in leitet die Gruppe durch die Übungen."
+        },
+        {
+          "id": "b5db11dd-f78b-4ffd-9014-f1ad835a1573",
+          "drill": {
+            "id": "a5e37ee6-e3e8-4de7-8857-759f5ed36f3a",
+            "title": "Off-Ice Station 2 - Kraft",
+            "description": "Verschiede Rumpfübungen gem. Anhang\nZweikampfformen (Battles in Liegestützposition, etc.)",
+            "keyPoints": [],
+            "categories": [
+              "EF01",
+              "EF09"
+            ],
+            "elements": [
+              "B03"
+            ],
+            "offIce": true,
+            "draft": true,
+            "scene": {
+              "rink": "full",
+              "items": []
+            },
+            "updatedAt": "2026-10-11T20:57:37.615Z",
+            "primary": "EF01",
+            "minutes": 12
+          },
+          "minutes": 12,
+          "notes": ""
+        },
+        {
+          "id": "8c9e676f-2fa1-47aa-b99c-a58e1b025623",
+          "drill": {
+            "id": "770ae8d6-cae2-445d-965e-ea9eb37dc18b",
+            "title": "Off-Ice Station 3 - Sprungschule",
+            "description": "Verschiede Sprungformen (horizontal & vertikal -> geradlinig, auf & ab)\nJede Form wird jeweils 2-4x wiederholt\n- Beidbeinig (vorwärts), Beidbeinig (seitlich)\n- Einbeinig (vorwärts), Einbeinig (seitlich)\n- Einbeinig abwechselnd (diagonal)\n- Einbeinig Weitsprünge während Sprint",
+            "keyPoints": [],
+            "categories": [
+              "EF01"
+            ],
+            "elements": [
+              "B04"
+            ],
+            "offIce": true,
+            "draft": true,
+            "scene": {
+              "rink": "full",
+              "items": []
+            },
+            "updatedAt": "2026-10-11T20:57:37.615Z",
+            "minutes": 12
+          },
+          "minutes": 12,
+          "notes": ""
+        },
+        {
+          "id": "74184717-9cd8-4557-9b3f-60c64b4a32bd",
+          "drill": {
+            "id": "b34d3b0b-76bc-431b-9c6b-0de26e671b25",
+            "title": "Off-Ice Cool Down",
+            "description": "Entspannungsübung u/o Verabschiedung",
+            "keyPoints": [],
+            "categories": [],
+            "elements": [],
+            "offIce": true,
+            "draft": true,
+            "scene": {
+              "rink": "full",
+              "items": []
+            },
+            "updatedAt": "2026-10-11T20:57:37.615Z",
+            "minutes": 5
+          },
+          "minutes": 5,
+          "notes": ""
+        }
+      ]
+    }
+  ]
+}

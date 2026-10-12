@@ -1,6 +1,6 @@
 # Ice hockey planning tool — basic version
 
-Status: planning only. No application code, dependencies or framework configuration have been created.
+Status: basic version implemented (milestones A–C); see the README for how to run it. Not yet covered: browser end-to-end test, static hosting.
 
 ## Confirmed scope
 
@@ -22,7 +22,7 @@ Reference: [SIHF U12 development plan](reference/sihf-u12-development-plan.md). 
 | Collection | Named reusable grouping, e.g. passing or U12 skating | Create, rename, add/remove drills |
 | Training session | Ordered plan for one practice | Name, optional date, add/reorder/remove drills, set duration, see total time |
 
-Proposed behavior, to confirm before implementation:
+Decided behavior:
 
 - Collections reference library drills; editing a drill updates its collections.
 - Adding a drill to a session takes a snapshot, including its drawing and metadata. Later library edits do not silently change an already planned practice.
@@ -56,7 +56,7 @@ Target desktop/laptop first. Pointer-based drawing should support touch where pr
 ### Rink and objects
 
 - Full rink, half rink and end-zone templates, using an international-style rink diagram.
-- Players from two distinguishable groups, goalkeeper, coach, puck, cone and movable goal.
+- Symbols from the official legend (see below): Offensivspieler/in, Defensivspieler/in, Torhüter/in, Coach, Tor, Puck, Mehrere Pucks, Pylone/Pneu, plus the Toblerone space blocker.
 - Optional player numbers and text labels.
 - Drag from the palette to the rink, or select a tool and click/tap to place.
 - Select, move, rotate applicable objects, duplicate and delete.
@@ -67,8 +67,8 @@ The rink is an illustration, not a certified scale drawing. Do not introduce NHL
 ### Drawing
 
 - Straight and curved routes with arrowheads.
-- Routes for skating forward, skating backward and skating with the puck.
-- Separate pass and shot lines.
+- Skating lines (vorwärts/rückwärts, Seitwärts, Bremsen) are drawn by hand; a line within ~5% of its length from straight is straightened, and undo restores the hand-drawn line. Pass and shot are straight drags that can be bent with a curve handle.
+- One line style for each line in the official legend (see below).
 - Freehand annotation and text.
 - Edit route endpoints and curve handles after drawing.
 - Undo/redo for every diagram mutation, including a completed drag or freehand stroke.
@@ -78,11 +78,11 @@ The rink is an illustration, not a certified scale drawing. Do not introduce NHL
 
 ### Terminology and visual language
 
-Proposed coach-facing terminology is German (Swiss spelling), with familiar English aliases where useful:
+Decided: coach-facing terminology is German (Swiss spelling), with familiar English aliases where useful:
 
 | Label | Alias / meaning |
 | --- | --- |
-| Spieler/in | Skater; distinguish teams by shape/label as well as color |
+| Offensivspieler/in / Defensivspieler/in | Skater; circle versus triangle per the official legend |
 | Torhüter/in | Goalie |
 | Trainer/in | Coach |
 | Schlittschuhlaufen vorwärts | Forward skating |
@@ -96,9 +96,30 @@ Proposed coach-facing terminology is German (Swiss spelling), with familiar Engl
 | Freilaufen / Anspieloption | Support |
 | Give and Go | Pass and immediately offer again |
 
-Proposed legend: solid arrow = forward skating, dashed arrow = backward skating, wavy arrow = skating with puck, dotted arrow = pass, double-line arrow = shot. Freehand marks are annotations, not automatically classified hockey actions.
+Decided: the diagram symbols follow the official SIHF «Eishockeysprache» legend ([Abbildung 26](reference/eishockeysprache-symbole.png)):
 
-These are proposed application conventions, not rules claimed to come from the supplied PDF. Confirm the legend with the user before implementation; keep it visible and carry it into printouts. Avoid color-only distinctions.
+| Symbol | Bedeutung |
+| --- | --- |
+| Circle | Offensivspieler/in |
+| Triangle | Defensivspieler/in |
+| Filled circle with «G» | Torhüter/in |
+| Circle with «C» | Coach |
+| Goal frame with net | Tor |
+| Dot | Puck |
+| Dot cluster | Mehrere Pucks |
+| × | Pylone/Pneu |
+| Solid line, arrowhead | Schlittschuhlaufen vorwärts ohne Puck |
+| Wavy line, arrowhead | Schlittschuhlaufen vorwärts mit Puck |
+| Solid line ending in two bars | Bremsen |
+| Broken wave, arrowhead | Schlittschuhlaufen rückwärts ohne Puck |
+| Broken wave with dots, arrowhead | Schlittschuhlaufen rückwärts mit Puck |
+| Line with short crossing ticks, arrowhead | Seitwärts verschieben |
+| Dotted line, arrowhead | Pass |
+| Short wave, triple chevron | Schuss |
+
+Deliberate deviation: the legend's Spielfeldbegrenzung (thick line) is not offered; areas are split with the «Toblerone», a 6 m × 0.6 m triangular space blocker (grey bar with ridge line) for splitting the ice into subfields; click to drop it, or drag from one end to aim it. Goal and Toblerone can be rotated with a drag handle (15° steps) or buttons.
+
+Freehand marks are annotations, not automatically classified hockey actions. Keep the legend visible and carry it into printouts. Black-and-white symbols only; no color-only distinctions.
 
 For U12, use fair-duel/body-positioning terminology from the reference. Do not interpret "Körpereinsatz" as permission for body checking.
 
@@ -162,7 +183,7 @@ Proposed implementation:
 - Treat imported text as text; do not execute HTML or arbitrary imported SVG.
 - Surface storage quota, unavailable storage and import errors without pretending the operation succeeded.
 
-Browser-local means this browser profile on this origin, not every browser on the same computer. Clearing site data, private browsing or browser eviction can lose data. The interface must say this and make backup export easy. There is no cloud backup or cross-device sync.
+Browser-local means this browser profile on this origin, not every browser on the same computer. Clearing site data, private browsing or browser eviction can lose data. The interface must say this and make backup export easy. All explanations, including this one, live on the Hilfe page and open from a «?» on each page. There is no cloud backup or cross-device sync.
 
 ## 6. Technical direction, not a committed stack
 
@@ -247,16 +268,16 @@ The current planning/reference-writing turn is separate from that future impleme
 - Accounts, cloud sync, shared libraries and multi-coach permissions.
 - AI drill generation or automatic categorization.
 - Animation, video and multi-step diagram playback.
-- Full season/calendar planning and progress tracking.
+- Full season/calendar planning and per-player progress tracking. (Added since: session status Entwurf/Definitiv, month folders, search by Erscheinungsform/Schlüsselelement, and a weekly/monthly dashboard of trainings and minutes.)
 - Dedicated mobile editor.
 - Standalone PDF-generation service or bespoke export engine.
 - Custom rink variants, custom category management and nested collections.
 - Full revision history and import merging.
 
-## Decisions still needed before coding
+## Decisions
 
-1. Confirm German-first UI and the proposed diagram symbols/line legend.
-2. Approve collection references versus session snapshots and deletion behavior.
-3. Approve the SVG/TypeScript approach and static-hosting destination.
+1. Decided: German-first UI with the official SIHF symbol legend (section 2).
+2. Decided: collections reference library drills; sessions store snapshots; deletion behaves as proposed in section 1.
+3. Decided: Vite + React + TypeScript, plain SVG diagrams, IndexedDB, Vitest. Open: static-hosting destination.
 
-The first two affect coaching expectations and saved-data behavior, so implementation should not assume approval merely because they are proposed here.
+The [SIHF U12 reference](reference/sihf-u12-development-plan.md) stays the single source for categories, including its annual plan for a later season-planning tool (not in scope).
