@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest'
-import { addEntries, blocks, clock, needs, timeline, totalMinutes, categoryCollections, categoryMinutes, deleteDrill, fromTemplate, mergeDb, saveVariant, selectSessions, filterDrills, filterSessions, isoWeek, periodStats, drillProblems, duplicateDrill, migrateDrill, moveIndex, newDrill, upsertDrill, validateDb } from './model'
+import { addDays, coveredElements, dummyTeam, fillDates, migrateDb, newPlan, sessionsInWeek, addEntries, blocks, clock, needs, timeline, totalMinutes, categoryCollections, categoryMinutes, deleteDrill, fromTemplate, mergeDb, saveVariant, selectSessions, filterDrills, filterSessions, isoWeek, periodStats, drillProblems, duplicateDrill, migrateDrill, moveIndex, newDrill, upsertDrill, validateDb } from './model'
+import { sihfPlan } from './sihf'
 import type { Db, Drill } from './types'
 
 const drill = (over: Partial<Drill> = {}): Drill => ({
@@ -119,7 +120,7 @@ test('search finds drills and trainings by Erscheinungsform and Schlüsselelemen
 test('periodStats splits definitive and planned trainings per period and skips undated ones', () => {
   const [s] = sample().sessions
   const rows = periodStats([s, { ...s, id: 'f', final: true }, { ...s, id: 'u', date: undefined }], isoWeek)
-  expect(rows).toEqual([{ period: '2026-W42', final: { count: 1, minutes: 24 }, planned: { count: 1, minutes: 24 } }])
+  expect(rows).toEqual([{ period: '2026-W42', final: { count: 1, minutes: 26 }, planned: { count: 1, minutes: 26 } }])
 })
 
 test('selectSessions filters by status and inclusive date range, dropping undated trainings', () => {
@@ -147,7 +148,7 @@ test('mergeDb adds new records, skips identical ones and copies conflicting ones
   theirs.collections[0].drillIds.push('new')
   const { db, added, skipped } = mergeDb(mine, theirs)
   expect(skipped).toBe(1) // the unchanged session
-  expect(added).toEqual({ drills: 2, collections: 1, sessions: 0 }) // the collection was combined, not copied
+  expect(added).toEqual({ drills: 2, collections: 1, sessions: 0, players: 0, plans: 0 }) // the collection was combined, not copied
   expect(db.drills.map((d) => d.title)).toEqual(['Give and Go', 'Geändert (Import)', 'Neu'])
   expect(db.collections).toHaveLength(1)
   expect(db.collections[0].drillIds).toEqual([mine.drills[0].id, db.drills[1].id, 'new']) // original kept, copy and new drill appended
@@ -176,17 +177,17 @@ test('saveVariant adds a new drill and changes only the edited entry', () => {
   expect(next.sessions[0].entries[1]).toEqual(second)
 })
 
-test('Posten-Blocks: parallel entries share time, rotation multiplies by the number of Posten', () => {
+test('Posten add up inside a block; 2 min changeover between blocks, none between Posten', () => {
   const d = drill({ minutes: 12 })
   const base = addEntries({ id: 's', title: 'T', start: '17:00', entries: [] }, [{ ...d, minutes: 7 }, d, d, d, { ...d, minutes: 5 }])
   const e = base.entries
   const parallel = { ...base, entries: [e[0], e[1], { ...e[2], parallel: true }, { ...e[3], parallel: true }, e[4]] }
   expect(blocks(parallel).map((b) => b.length)).toEqual([1, 3, 1])
-  expect(totalMinutes(parallel)).toBe(7 + 12 + 5)
-  const rotating = { ...parallel, entries: parallel.entries.map((x, i) => (i === 1 ? { ...x, rotate: true } : x)) }
-  expect(totalMinutes(rotating)).toBe(7 + 36 + 5)
-  expect(timeline(rotating).map((b) => `${clock('17:00', b.from)}-${clock('17:00', b.to)}`)).toEqual(['17:00-17:07', '17:07-17:43', '17:43-17:48'])
+  expect(totalMinutes(parallel)).toBe(7 + 2 + 36 + 2 + 5)
+  expect(timeline(parallel).map((b) => `${clock('17:00', b.from)}-${clock('17:00', b.to)}`)).toEqual(['17:00-17:07', '17:09-17:45', '17:47-17:52'])
+  expect(totalMinutes(base)).toBe(7 + 36 + 5 + 4 * 2) // five separate exercises, four changes
   expect(totalMinutes({ ...base, entries: [{ ...e[0], parallel: true }] })).toBe(7) // a first entry cannot join a block
+  expect(totalMinutes({ ...base, entries: [] })).toBe(0)
   expect(clock('23:50', 20)).toBe('00:10')
 })
 
@@ -196,4 +197,55 @@ test('needs adds players of parallel Posten and lists material once', () => {
   const s = addEntries({ id: 's', title: 'T', entries: [] }, [a, b])
   expect(needs(s)).toEqual({ players: 6, goalies: 1, material: ['Pucks'] })
   expect(needs({ ...s, entries: [s.entries[0], { ...s.entries[1], parallel: true }] }).players).toBe(10)
+})
+
+test('the SIHF Jahresablauf is read completely: 39 weeks, 102 trainings, both breaks', () => {
+  expect(sihfPlan.filter((w) => w.phase === 'Off-Ice Saison')).toHaveLength(10)
+  expect(sihfPlan.filter((w) => w.phase === 'Eissaison')).toHaveLength(29)
+  expect(sihfPlan.flatMap((w) => w.trainings)).toHaveLength(102)
+  expect(sihfPlan.filter((w) => w.breakAfter).map((w) => `${w.phase} ${w.week} ${w.breakAfter}`)).toEqual(['Off-Ice Saison 10 Sommerpause', 'Eissaison 18 Weihnachtspause'])
+  const camp = sihfPlan.find((w) => w.special === 'Trainingslager')!
+  expect([camp.trainings.length, camp.personality]).toEqual([8, ['V07', 'V15', 'V16', 'V17', 'V18']])
+  expect(sihfPlan.find((w) => w.phase === 'Eissaison' && w.week === 2)).toMatchObject({ month: 'August', trainings: ['D02', 'D03', 'P05'], offIce: ['O01'], personality: ['V02'] })
+})
+
+test('a new season plan has the SIHF weeks; the full one rebuilds every training', () => {
+  const empty = newPlan('Saison')
+  expect(empty.weeks).toHaveLength(39)
+  expect(empty.weeks.every((w) => !w.trainings.length && !w.offIce.length && !w.personality.length)).toBe(true)
+  expect(empty.weeks[9].breakAfter).toBe('Sommerpause')
+  expect(newPlan('SIHF', true).weeks.flatMap((w) => w.trainings)).toHaveLength(102)
+})
+
+test('fillDates dates the rest of the phase one week apart', () => {
+  const p = newPlan('Saison')
+  const ice = p.weeks.findIndex((w) => w.phase === 'Eissaison')
+  const weeks = fillDates(p.weeks.map((w, i) => (i === 8 || i === ice ? { ...w, monday: i === 8 ? '2026-07-06' : '2026-08-10' } : w)), p.weeks[8].id)
+  expect(weeks[9].monday).toBe('2026-07-13')
+  expect(weeks[ice].monday).toBe('2026-08-10') // the next phase keeps its own start
+  expect(fillDates(weeks, weeks[ice].id).at(-1)!.monday).toBe(addDays('2026-08-10', 28 * 7))
+})
+
+test('a week shows the trainings dated in it and the Schlüsselelemente they cover', () => {
+  const [s] = sample().sessions // dated 2026-10-13, drill with U02
+  expect(sessionsInWeek([s, { ...s, id: 't', template: true }], '2026-10-12').map((x) => x.id)).toEqual([s.id])
+  expect(sessionsInWeek([s], '2026-10-14')).toEqual([])
+  expect([...coveredElements([s])]).toEqual(['U02'])
+})
+
+test('team and season plan survive a backup round trip and are checked on import', () => {
+  const db = { ...sample(), players: dummyTeam(), plans: [newPlan('SIHF', true)] }
+  db.sessions[0].attendance = [db.players[0].id]
+  expect(roundTrip(db)).toEqual(db)
+  expect(() => roundTrip({ ...db, sessions: [{ ...db.sessions[0], attendance: ['nobody'] }] })).toThrow()
+  const bad = structuredClone(db.plans[0])
+  bad.weeks[0].trainings = [['X99']]
+  expect(() => roundTrip({ ...db, plans: [bad] })).toThrow()
+  expect(() => roundTrip(sample())).not.toThrow() // backups without team/plans stay valid
+})
+
+test('existing data gets the 20-player starting team once', () => {
+  const team = migrateDb(sample()).players!
+  expect(team.map((p) => p.position).join('')).toBe('GG' + 'D'.repeat(6) + 'F'.repeat(12))
+  expect(migrateDb({ ...sample(), players: [] }).players).toEqual([])
 })

@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import { Legend } from './Diagram'
 import { HelpButton } from './Help'
 import { CategoryFilter, DrillSummary } from './Library'
-import { addEntries, blockMinutes, categoryCollections, clock, duplicateSession, filterSessions, fromTemplate, monthKey, monthLabel, moveIndex, needs, timeline, totalMinutes } from './model'
+import { addEntries, blockMinutes, categoryCollections, clock, duplicateSession, filterSessions, fromTemplate, groupPlayers, monthKey, monthLabel, moveIndex, needs, timeline, totalMinutes } from './model'
 import type { Change } from './model'
 import { uid } from './scene'
 import type { Db, Drill, Session, SessionEntry } from './types'
@@ -92,6 +91,7 @@ function SessionEditor({ s, db, upd, onBack, onEdit }: { s: Session; db: Db; upd
   const plan = timeline(s)
   const span = (from: number, to: number) => `${clock(s.start!, from)}–${clock(s.start!, to)}`
   const n = needs(s)
+  const team = db.players ?? []
   const needLine = [n.players && `${n.players} Spieler/innen`, n.goalies && `${n.goalies} Torhüter/innen`, n.material.length && `Material: ${n.material.join(', ')}`]
     .filter(Boolean).join(' · ')
 
@@ -149,6 +149,28 @@ function SessionEditor({ s, db, upd, onBack, onEdit }: { s: Session; db: Db; upd
           </select>
         </div>
         {needLine && <p className="needs">Benötigt: {needLine}</p>}
+        <details className="card attendance">
+          <summary>Anwesenheit (AWK){s.attendance ? `: ${s.attendance.length} von ${team.length}` : ' · nicht erfasst'}</summary>
+          {!s.attendance ? (
+            <button onClick={() => upd((s) => ({ ...s, attendance: team.map((p) => p.id) }))}>Anwesenheit erfassen (alle anwesend)</button>
+          ) : (
+            <div className="roster">
+              {groupPlayers(team).map(([group, list]) => (
+                <fieldset key={group}>
+                  <legend>{group} ({list.filter((p) => s.attendance!.includes(p.id)).length}/{list.length})</legend>
+                  {list.map((p) => (
+                    <label key={p.id} className="check">
+                      <input type="checkbox" checked={s.attendance!.includes(p.id)} onChange={(e) => {
+                        const on = e.target.checked
+                        upd((s) => ({ ...s, attendance: on ? [...(s.attendance ?? []), p.id] : (s.attendance ?? []).filter((x) => x !== p.id) }))
+                      }} /> {p.number} {p.name} ({p.position})
+                    </label>
+                  ))}
+                </fieldset>
+              ))}
+            </div>
+          )}
+        </details>
         <label className="session-notes">Notizen zum Training (z. B. Schwerpunkte, Key-Points Coach)
           <textarea rows={3} defaultValue={s.notes ?? ''} onBlur={(e) => {
             const notes = e.target.value.trim() || undefined
@@ -209,9 +231,6 @@ function SessionEditor({ s, db, upd, onBack, onEdit }: { s: Session; db: Db; upd
                 <div className="row block-head">
                   {s.start && <span className="time">{span(from, to)}</span>}
                   <h3>{k + 1}. Posten-Block · {entries.length} Posten</h3>
-                  <label className="check">
-                    <input type="checkbox" checked={!!entries[0].rotate} onChange={(ev) => setEntry(entries[0].id, { rotate: ev.target.checked || undefined })} /> Gruppen rotieren
-                  </label>
                   <strong>{blockMinutes(entries)} Min.</strong>
                 </div>
                 <ol className="entries posten">{cards}</ol>
@@ -224,11 +243,18 @@ function SessionEditor({ s, db, upd, onBack, onEdit }: { s: Session; db: Db; upd
         <h1>{s.title}</h1>
         <p>{[s.date, s.start && span(0, total), `Total ${total} Min.`].filter(Boolean).join(' · ')}</p>
         {needLine && <p>{needLine}</p>}
+        {team.length > 0 && (
+          <div className="posten-grid">
+            {groupPlayers(team.filter((p) => !s.attendance || s.attendance.includes(p.id))).map(([group, list]) => (
+              <p key={group}><strong>{group}:</strong> {list.map((p) => `${p.number ?? ''} ${p.name} (${p.position})`.trim()).join(', ')}</p>
+            ))}
+          </div>
+        )}
         {s.notes && <p className="pre">{s.notes}</p>}
         {plan.map(({ entries, from, to }, k) => (
           <section key={entries[0].id} className="print-block">
             <h2>{s.start && `${span(from, to)} · `}{k + 1}. {entries.length > 1
-              ? `Posten-Block (${entries[0].rotate ? 'Rotation' : 'gleichzeitig'}) · ${blockMinutes(entries)} Min.`
+              ? `Posten-Block · ${entries.length} Posten · ${blockMinutes(entries)} Min.`
               : `${entries[0].drill.title} · ${entries[0].minutes} Min.`}</h2>
             <div className={entries.length > 1 ? 'posten-grid' : undefined}>
               {entries.map((e, j) => (
@@ -241,7 +267,6 @@ function SessionEditor({ s, db, upd, onBack, onEdit }: { s: Session; db: Db; upd
             </div>
           </section>
         ))}
-        <Legend />
       </div>
     </>
   )

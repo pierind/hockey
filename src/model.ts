@@ -1,11 +1,56 @@
 import { mid, uid } from './scene'
-import { categories, elements } from './sihf'
+import { categories, elements, goals, sihfPlan } from './sihf'
 import { ROUTE_LABELS, SYMBOL_LABELS } from './types'
-import type { Collection, Db, Drill, Item, Pt, Session, SessionEntry } from './types'
+import type { Collection, Db, Drill, Item, PlanWeek, Player, Pt, SeasonPlan, Session, SessionEntry } from './types'
 
 export type Change = (fn: (db: Db) => Db) => Promise<void>
 
-export const emptyDb = (): Db => ({ version: 1, drills: [], collections: [], sessions: [] })
+export const emptyDb = (): Db => ({ version: 1, drills: [], collections: [], sessions: [], players: dummyTeam(), plans: [] })
+
+// Starting team: 20 placeholder players (2 G, 6 D, 12 F) split into two groups, renamed by the coach.
+export const dummyTeam = (): Player[] =>
+  Array.from({ length: 20 }, (_, i) => ({
+    id: uid(),
+    name: `Spieler/in ${i + 1}`,
+    number: i + 1,
+    position: i < 2 ? 'G' : i < 8 ? 'D' : 'F',
+    group: i % 2 ? 'Weiss' : 'Blau',
+  }))
+
+// Season plan with the SIHF weeks (10 off-ice + 29 ice weeks, same months and breaks); full = with all SIHF goals.
+export const newPlan = (name: string, full = false): SeasonPlan => ({
+  id: uid(),
+  name,
+  weeks: sihfPlan.map((w) => ({
+    ...(full ? { ...w, trainings: w.trainings.map((t) => [t]) } : { phase: w.phase, week: w.week, month: w.month, breakAfter: w.breakAfter, trainings: [] as string[][], offIce: [], personality: [] }),
+    id: uid(),
+  })),
+})
+
+export const addDays = (date: string, days: number) => {
+  const d = new Date(`${date}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+// Dates the weeks after `weekId` in the same phase one week apart; after a break, set the next week and fill again.
+export function fillDates(weeks: PlanWeek[], weekId: string): PlanWeek[] {
+  const i = weeks.findIndex((w) => w.id === weekId)
+  const start = weeks[i]?.monday
+  if (!start) return weeks
+  return weeks.map((w, j) => (j > i && w.phase === weeks[i].phase ? { ...w, monday: addDays(start, (j - i) * 7) } : w))
+}
+// Players by group (in first-seen order), e.g. [['Blau', [...]], ['Weiss', [...]]].
+export function groupPlayers(players: Player[]): [string, Player[]][] {
+  const groups = new Map<string, Player[]>()
+  for (const p of players) groups.set(p.group || 'Ohne Gruppe', [...(groups.get(p.group || 'Ohne Gruppe') ?? []), p])
+  return [...groups]
+}
+
+// Trainings (not templates) dated within the 7 days from monday.
+export const sessionsInWeek = (sessions: Session[], monday: string) =>
+  sessions.filter((s) => !s.template && s.date && s.date >= monday && s.date <= addDays(monday, 6))
+// Schlüsselelemente the drills of these trainings cover.
+export const coveredElements = (sessions: Session[]) => new Set(sessions.flatMap((s) => s.entries.flatMap((e) => e.drill.elements)))
 
 export const newDrill = (): Drill => ({
   id: uid(),
@@ -44,6 +89,8 @@ export function migrateDrill(d: Drill): Drill {
 }
 export const migrateDb = (db: Db): Db => ({
   ...db,
+  players: db.players ?? dummyTeam(),
+  plans: db.plans ?? [],
   drills: db.drills.map(migrateDrill),
   sessions: db.sessions.map((s) => ({ ...s, entries: s.entries.map((e) => ({ ...e, drill: migrateDrill(e.drill) })) })),
 })
@@ -96,7 +143,7 @@ export const duplicateSession = (s: Session): Session => ({
 // and collections point at those copies.
 export function mergeDb(current: Db, incoming: Db) {
   const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
-  const added = { drills: 0, collections: 0, sessions: 0 }
+  const added = { drills: 0, collections: 0, sessions: 0, players: 0, plans: 0 }
   let skipped = 0
   const drillIds = new Map<string, string>() // imported id -> id used here
   function add<T extends { id: string }>(list: T[], items: T[], kind: keyof typeof added, rename: (x: T) => T, onCopy?: (from: string, to: string) => void) {
@@ -134,7 +181,9 @@ export function mergeDb(current: Db, incoming: Db) {
     added.collections++
   }
   const sessions = add(current.sessions, incoming.sessions, 'sessions', (s) => ({ ...s, title: `${s.title} (Import)` }))
-  return { db: { ...current, drills, collections, sessions }, added, skipped }
+  const players = add(current.players ?? [], incoming.players ?? [], 'players', (p) => ({ ...p, name: `${p.name} (Import)` }))
+  const plans = add(current.plans ?? [], incoming.plans ?? [], 'plans', (p) => ({ ...p, name: `${p.name} (Import)` }))
+  return { db: { ...current, drills, collections, sessions, players, plans }, added, skipped }
 }
 
 // New training from a template or an earlier training: fresh ids, no date, starts as a plan.
@@ -146,19 +195,21 @@ export function blocks(s: Session): SessionEntry[][] {
   s.entries.forEach((e, i) => (i && e.parallel ? out[out.length - 1].push(e) : out.push([e])))
   return out
 }
-// A block lasts as long as its longest Posten; with rotation every group visits every Posten, one round each.
-export const blockMinutes = (b: SessionEntry[]) => Math.max(...b.map((e) => e.minutes)) * (b.length > 1 && b[0].rotate ? b.length : 1)
-export const totalMinutes = (s: Session) => blocks(s).reduce((sum, b) => sum + blockMinutes(b), 0)
+// Changeover between consecutive exercises/blocks; rotating between Posten inside a block has none.
+export const CHANGE_MINUTES = 2
+// Every group visits every Posten, so a block takes the sum: the time each player spends at each exercise.
+export const blockMinutes = (b: SessionEntry[]) => b.reduce((sum, e) => sum + e.minutes, 0)
 
-// Blocks with their start/end in minutes from the training start.
+// Blocks with their start/end in minutes from the training start, changeovers included.
 export function timeline(s: Session) {
   let t = 0
-  return blocks(s).map((entries) => {
-    const from = t
+  return blocks(s).map((entries, i) => {
+    const from = (t += i ? CHANGE_MINUTES : 0)
     t += blockMinutes(entries)
     return { entries, from, to: t }
   })
 }
+export const totalMinutes = (s: Session) => timeline(s).at(-1)?.to ?? 0
 // 'HH:MM' plus minutes, wrapping at midnight.
 export function clock(start: string, minutes: number) {
   const [h, m] = start.split(':').map(Number)
@@ -320,11 +371,27 @@ export function validateDb(x: unknown): Db {
     need(isObj(s) && isStr(s.id) && isStr(s.title) && opt(s.date, isStr) && opt(s.final, (f) => typeof f === 'boolean') && opt(s.notes, isStr) && opt(s.template, (t) => typeof t === 'boolean') && opt(s.start, (t) => isStr(t) && /^\d{2}:\d{2}$/.test(t)) && Array.isArray(s.entries), `Training ${i + 1}: Felder fehlen`)
     s.entries.forEach((e, j) => {
       const w = `Training ${i + 1}, Eintrag ${j + 1}`
-      need(isObj(e) && isStr(e.id) && isNum(e.minutes) && e.minutes >= 0 && isStr(e.notes) && opt(e.parallel, (b) => typeof b === 'boolean') && opt(e.rotate, (b) => typeof b === 'boolean'), `${w}: Felder fehlen`)
+      need(isObj(e) && isStr(e.id) && isNum(e.minutes) && e.minutes >= 0 && isStr(e.notes) && opt(e.parallel, (b) => typeof b === 'boolean'), `${w}: Felder fehlen`)
       checkDrill(e.drill, w)
     })
     need(unique(s.entries.map((e: Obj) => e.id)), `Training ${i + 1}: doppelte Eintrags-IDs`)
   })
-  need(unique(x.collections.map((c: Obj) => c.id)) && unique(x.sessions.map((s: Obj) => s.id)), 'Doppelte IDs')
+  need(opt(x.players, Array.isArray) && opt(x.plans, Array.isArray), 'Backup unvollständig')
+  const players = (x.players ?? []) as unknown[]
+  players.forEach((p, i) =>
+    need(isObj(p) && isStr(p.id) && isStr(p.name) && opt(p.number, isNum) && ['F', 'D', 'G'].includes(p.position as string) && opt(p.group, isStr), `Spieler/in ${i + 1}: Felder fehlen`))
+  const playerIds = new Set(players.map((p) => (p as Obj).id))
+  x.sessions.forEach((s: Obj, i) => need(opt(s.attendance, (a) => strs(a) && a.every((id) => playerIds.has(id))), `Training ${i + 1}: Anwesenheit verweist auf unbekannte Spieler/in`))
+  const known = new Set([...ELEMENT_IDS, ...goals.map((g) => g.id)])
+  const codes = (v: unknown) => strs(v) && v.every((c) => known.has(c))
+  ;((x.plans ?? []) as unknown[]).forEach((p, i) => {
+    const w = `Saisonplan ${i + 1}`
+    need(isObj(p) && isStr(p.id) && isStr(p.name) && Array.isArray(p.weeks), `${w}: Felder fehlen`)
+    p.weeks.forEach((k: unknown, j) =>
+      need(isObj(k) && isStr(k.id) && isStr(k.phase) && isNum(k.week) && opt(k.month, isStr) && opt(k.monday, isStr) && opt(k.special, isStr)
+        && Array.isArray(k.trainings) && k.trainings.every(codes) && codes(k.offIce) && codes(k.personality) && opt(k.notes, isStr) && opt(k.breakAfter, isStr),
+      `${w}, Woche ${j + 1}: ungültig`))
+  })
+  need(unique(x.collections.map((c: Obj) => c.id)) && unique(x.sessions.map((s: Obj) => s.id)) && playerIds.size === players.length, 'Doppelte IDs')
   return x as unknown as Db
 }

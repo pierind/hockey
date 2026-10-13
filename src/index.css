@@ -199,6 +199,29 @@ section > .help-section { background: var(--surface); border: 1px solid var(--li
 .board-canvas { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 8px; }
 .board-canvas svg { touch-action: none; max-height: calc(100dvh - 170px); cursor: crosshair; }
 
+/* Season plan and team */
+.phase { margin: 22px 0 8px; color: var(--navy-2); }
+.week summary .badge { margin-left: 6px; }
+.week-body { display: grid; gap: 6px; }
+.week-body h4 { margin: 8px 0 2px; }
+.slots { margin: 0; padding-left: 0; list-style: none; display: grid; gap: 6px; }
+.slot-no { min-width: 30px; color: var(--muted); }
+.goal-rows h4 { margin: 0 6px 0 0; min-width: 190px; }
+.chip.goal { max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip.goal.done { background: #e3f5e3; border-color: #9fd59f; }
+.chip-x { border: 0; background: none; padding: 0 0 0 6px; font-size: 0.9rem; line-height: 1; color: var(--muted); }
+.pause { text-align: center; color: var(--muted); font-weight: 600; letter-spacing: 0.04em; margin: 4px 0 14px; }
+.pause::before, .pause::after { content: ' —— '; }
+.grow { flex: 1; min-width: 240px; }
+.grow textarea { width: 100%; }
+input.short { width: 110px; }
+.team input { width: 100%; min-width: 120px; }
+.team input.num { width: 64px; min-width: 0; }
+.team td:last-child { width: auto; }
+.roster { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin: 10px 14px; }
+.roster fieldset { border: 1px solid var(--line); border-radius: 8px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
 .print-only { display: none; }
 
 @media (max-width: 1100px) {

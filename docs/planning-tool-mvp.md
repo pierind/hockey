@@ -119,7 +119,7 @@ Decided: the diagram symbols follow the official SIHF «Eishockeysprache» legen
 
 Deliberate deviation: the legend's Spielfeldbegrenzung (thick line) is not offered; areas are split with the «Toblerone», a 6 m × 0.6 m triangular space blocker (grey bar with ridge line) for splitting the ice into subfields; click to drop it, or drag from one end to aim it. Goal and Toblerone can be rotated with a drag handle (15° steps) or buttons.
 
-Freehand marks are annotations, not automatically classified hockey actions. Keep the legend visible and carry it into printouts. Black-and-white symbols only; no color-only distinctions.
+Freehand marks are annotations, not automatically classified hockey actions. Keep the legend visible in the app; the training printout omits it (decided 2026-10-13). Black-and-white symbols only; no color-only distinctions.
 
 For U12, use fair-duel/body-positioning terminology from the reference. Do not interpret "Körpereinsatz" as permission for body checking.
 

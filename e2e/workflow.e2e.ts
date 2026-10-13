@@ -55,33 +55,39 @@ test('coach workflow', async ({ page }) => {
   await page.getByLabel('Übung zu Passen hinzufügen').selectOption({ label: 'Give and Go Test' })
   await expect(page.getByRole('button', { name: 'Give and Go Test' })).toBeVisible()
 
-  // Training with start time and a rotating Posten-Block of the same drill twice
+  // Training with start time; the same drill twice, first in a row (2 min changeover), then as a Posten-Block
   await page.getByRole('button', { name: 'Trainings' }).click()
   await page.getByRole('button', { name: 'Neues Training' }).click()
   await page.getByLabel('Start').fill('17:00')
   await page.getByLabel('Übung aus der Bibliothek hinzufügen').selectOption({ label: 'Give and Go Test' })
   await page.getByLabel('Übung aus der Bibliothek hinzufügen').selectOption({ label: 'Give and Go Test' })
-  await expect(page.getByText('Total: 24 Min. · 17:00–17:24')).toBeVisible()
+  await expect(page.getByText('Total: 26 Min. · 17:00–17:26')).toBeVisible()
   await page.getByLabel('Parallel (Posten)').check()
-  await expect(page.getByText('Total: 12 Min. · 17:00–17:12')).toBeVisible()
-  await page.getByLabel('Gruppen rotieren').check()
   await expect(page.getByText('Total: 24 Min. · 17:00–17:24')).toBeVisible()
+  // Attendance: record, mark one player absent
+  await page.locator('summary', { hasText: 'Anwesenheit (AWK)' }).click()
+  await page.getByRole('button', { name: 'Anwesenheit erfassen (alle anwesend)' }).click()
+  await page.getByLabel('3 Spieler/in 3 (D)').uncheck()
+  await expect(page.getByText('Anwesenheit (AWK): 19 von 20')).toBeVisible()
   await expect(page.getByText('Benötigt: 8 Spieler/innen')).toBeVisible()
   await page.getByRole('button', { name: 'Als definitiv markieren' }).click()
 
   // Print view shows the sheet with the block and the legend
   await page.emulateMedia({ media: 'print' })
   await expect(page.getByRole('heading', { name: 'Neues Training', level: 1 })).toBeVisible()
-  await expect(page.getByText('1. Posten-Block (Rotation) · 24 Min.')).toBeVisible()
-  await expect(page.getByRole('list', { name: 'Legende' }).last()).toBeVisible()
+  await expect(page.getByText('1. Posten-Block · 2 Posten · 24 Min.')).toBeVisible()
+  const sheet = page.locator('.print-only')
+  await expect(sheet).toContainText('Blau: 1 Spieler/in 1 (G), 5 Spieler/in 5 (D)') // groups of present players…
+  await expect(sheet).not.toContainText('Spieler/in 3 (D)') // …without the absent one
+  await expect(sheet.getByRole('list', { name: 'Legende' })).toHaveCount(0) // no symbol legend on the sheet
   await page.emulateMedia({ media: 'screen' })
 
   // Export, then import the same file with «Hinzufügen»: everything is already there
   const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Backup exportieren' }).click()])
   const file = await download.path()
   const backup = JSON.parse(readFileSync(file, 'utf8'))
-  expect([backup.drills.length, backup.collections.length, backup.sessions.length]).toEqual([1, 1, 1])
+  expect([backup.drills.length, backup.collections.length, backup.sessions.length, backup.players.length]).toEqual([1, 1, 1, 20])
   await page.locator('input[type=file]').setInputFiles(file)
   await page.getByRole('button', { name: 'Hinzufügen' }).click()
-  await expect(page.getByText('0 Übungen, 0 Sammlungen, 0 Trainings hinzugefügt; 3 bereits vorhanden.')).toBeVisible()
+  await expect(page.getByText('0 Übungen, 0 Sammlungen, 0 Trainings hinzugefügt; 23 bereits vorhanden.')).toBeVisible()
 })

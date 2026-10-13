@@ -9,10 +9,12 @@ import { Library } from './Library'
 import { emptyDb, mergeDb, migrateDb, migrateDrill, saveVariant, upsertDrill, validateDb } from './model'
 import { uid } from './scene'
 import type { Change } from './model'
+import { Season } from './Season'
 import { Sessions } from './Sessions'
+import { Team } from './Team'
 import type { Db, Drill } from './types'
 
-const TABS = [['library', 'Bibliothek'], ['collections', 'Sammlungen'], ['sessions', 'Trainings'], ['board', 'Taktiktafel'], ['dashboard', 'Auswertung'], ['help', 'Hilfe']] as const
+const TABS = [['library', 'Bibliothek'], ['collections', 'Sammlungen'], ['sessions', 'Trainings'], ['season', 'Saisonplan'], ['team', 'Team'], ['board', 'Taktiktafel'], ['dashboard', 'Auswertung'], ['help', 'Hilfe']] as const
 type Tab = (typeof TABS)[number][0]
 
 export function App() {
@@ -157,6 +159,8 @@ export function App() {
         {tab === 'library' && <Library db={db} change={change} onEdit={(drill) => setEditing({ drill })} />}
         {tab === 'collections' && <Collections db={db} change={change} onEdit={(drill) => setEditing({ drill })} />}
         {tab === 'dashboard' && <Dashboard db={db} />}
+        {tab === 'season' && <Season db={db} change={change} />}
+        {tab === 'team' && <Team db={db} change={change} />}
         {tab === 'board' && <Board />}
         {tab === 'help' && <Help />}
       </div>

@@ -61,13 +61,15 @@ const HELP = {
         <li>Status: <span className="status-badge draft">✎ Entwurf</span> = geplant, noch offen; <span className="status-badge final">✓ Definitiv</span> = festgelegt; <span className="status-badge template">▤ Vorlage</span> = Vorlage. Umschalten im Training.</li>
         <li><b>Vorlagen</b>: ein Training mit «Vorlage» markieren (z. B. typischer Ablauf Einwärmen → Posten → Spielform). Vorlagen stehen oben in eigenem Ordner und zählen nicht in der Auswertung. «Neues Training aus…» erstellt aus einer Vorlage oder einem früheren Training ein neues Training ohne Datum, als Entwurf. Mit «Ersetzen durch…» lässt sich pro Eintrag eine andere Übung einsetzen; Dauer und Notizen bleiben.</li>
         <li><b>Start</b> (Uhrzeit) eintragen: jeder Eintrag zeigt dann seine Zeit, z. B. 17:07–17:47, auch auf dem Trainingsblatt.</li>
-        <li><b>Posten-Block</b>: «Parallel (Posten)» bei einem Eintrag setzen, er läuft dann gleichzeitig mit dem vorherigen. Ohne Rotation dauert der Block so lange wie der längste Posten; mit «Gruppen rotieren» besucht jede Gruppe jeden Posten, der Block dauert also Anzahl Posten × längster Posten. Wechselzeit ist nicht eingerechnet (z. B. Posten-Dauer etwas länger setzen). Auf dem Trainingsblatt stehen die Posten nebeneinander.</li>
+        <li><b>Posten-Block</b>: «Parallel (Posten)» bei einem Eintrag setzen, er gehört dann zum selben Block wie der vorherige. Die Gruppen rotieren durch alle Posten, darum zählt jeder Posten mit seiner vollen Dauer: 3 Posten à 12 Min. = 36 Min., also die Zeit, die jede Spielerin und jeder Spieler an jeder Übung verbringt. Auf dem Trainingsblatt stehen die Posten nebeneinander.</li>
+        <li><b>Wechselzeit</b>: zwischen zwei Übungen bzw. Blöcken werden automatisch 2 Min. eingerechnet (in Zeiten und Total). Der Wechsel zwischen den Posten innerhalb eines Blocks zählt nicht extra.</li>
+        <li><b>Anwesenheit (AWK)</b>: im Training «Anwesenheit erfassen» und abwesende Spieler/innen abwählen. Das Trainingsblatt zeigt die anwesenden Spieler/innen nach Gruppen (ohne Erfassung das ganze Team).</li>
         <li><b>Benötigt</b>: aus den Angaben der Übungen (Spieler/innen, Torhüter/innen, Material). Posten im selben Block laufen gleichzeitig und werden zusammengezählt; massgebend ist der Block mit dem grössten Bedarf.</li>
         <li><b>Bearbeiten</b> bei einem Eintrag öffnet die Übung im Editor. Speichern legt sie als neue <b>Variante</b> in der Bibliothek an (Titel mit «(Variante)», falls nicht umbenannt) und setzt sie in diesem Eintrag ein. Die Original-Übung und andere Trainings bleiben unverändert. Schliessen ohne Speichern ändert nichts.</li>
         <li><b>Notizen zum Training</b> gelten für das ganze Training (z. B. Schwerpunkte, Key-Points Coach), erscheinen auf dem Trainingsblatt und werden durchsucht. Pro Übung gibt es zusätzlich eigene Notizen.</li>
         <li>Übungen werden als <b>Kopie</b> eingeplant: spätere Änderungen in der Bibliothek ändern ein Training nicht. Dieselbe Übung darf mehrmals vorkommen.</li>
         <li>Reihenfolge: am Griff ⠿ ziehen oder «Nach oben / Nach unten». Eine ungültige Dauer wird nicht übernommen.</li>
-        <li><b>Drucken / PDF</b> erstellt ein Trainingsblatt mit Diagrammen und Legende (im Druckdialog «Als PDF sichern»).</li>
+        <li><b>Drucken / PDF</b> erstellt ein Trainingsblatt mit Diagrammen (im Druckdialog «Als PDF sichern»).</li>
       </ul>
     ),
   },
@@ -79,6 +81,27 @@ const HELP = {
         <li><b>Trainings</b>: Anzahl Trainings und Minuten pro Zeitraum, getrennt nach definitiv und geplant (Entwurf).</li>
         <li><b>Minuten pro Erscheinungsform</b>: alle neun Erscheinungsformen mit Minuten pro Zeitraum (dunkler = mehr) und Total. Hat eine Übung mehrere Erscheinungsformen, werden ihre Minuten gleichmässig aufgeteilt, damit die Summe der Trainingszeit entspricht. Übungen ohne Erscheinungsform erscheinen als «Ohne Erscheinungsform».</li>
         <li>Minuten sind die Dauern der Übungen im Training. Trainings ohne Datum werden nicht gezählt.</li>
+      </ul>
+    ),
+  },
+  season: {
+    title: 'Saisonplan',
+    body: (
+      <ul>
+        <li>Ein Saisonplan hat dieselben Wochen wie der SIHF-Ausbildungsplan: 10 Wochen Off-Ice Saison und 29 Wochen Eissaison, mit Sommer- und Weihnachtspause. <b>Neuer Plan</b> erstellt diese Wochen leer; <b>SIHF-Beispiel übernehmen</b> erstellt den kompletten Beispielplan als Ausgangspunkt.</li>
+        <li>Pro Woche planen: Monat, Spezial (z. B. Elterninfo, Trainingslager), die geplanten <b>Trainings</b> mit ihren Ziel-Schlüsselelementen, das begleitende Off-Ice-Ziel, das Persönlichkeitsziel, Notizen und eine Pause danach.</li>
+        <li><b>Wochenbeginn</b> setzen verbindet die Woche mit dem Kalender. «Folgende Wochen datieren» setzt die restlichen Wochen der Phase im Wochenabstand; nach einer Pause die erste Woche neu setzen und erneut datieren.</li>
+        <li><b>Ist</b>: datierte Wochen zeigen die Trainings dieser Woche. Bei jedem geplanten Ziel steht ✓, wenn eine Übung in diesen Trainings das Schlüsselelement hat, sonst ○. «Training anlegen» erstellt ein Training in dieser Woche mit den Zielen in den Notizen.</li>
+      </ul>
+    ),
+  },
+  team: {
+    title: 'Team',
+    body: (
+      <ul>
+        <li>Das Team startet mit 20 Platzhaltern (2 Torhüter/innen, 6 Verteidiger/innen, 12 Stürmer/innen) in den Gruppen Blau und Weiss. Namen, Nummern, Positionen und Gruppen direkt in der Tabelle ändern.</li>
+        <li>Gruppen sind frei benennbar (z. B. für Posten oder Blau/Weiss) und erscheinen auf dem Trainingsblatt.</li>
+        <li>«Anwesend» zählt, in wie vielen Trainings mit erfasster Anwesenheit die Person dabei war.</li>
       </ul>
     ),
   },
