@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { addDays, coveredElements, dummyTeam, fillDates, migrateDb, newPlan, sessionsInWeek, addEntries, blocks, clock, needs, timeline, totalMinutes, categoryCollections, categoryMinutes, deleteDrill, fromTemplate, mergeDb, saveVariant, selectSessions, filterDrills, filterSessions, isoWeek, periodStats, drillProblems, duplicateDrill, migrateDrill, moveIndex, newDrill, upsertDrill, validateDb } from './model'
+import { addDays, coveredElements, toIcs, setSlot, removePlayer, gameTitle, dummyTeam, fillDates, migrateDb, newPlan, sessionsInWeek, addEntries, blocks, clock, needs, timeline, totalMinutes, categoryCollections, categoryMinutes, deleteDrill, fromTemplate, mergeDb, saveVariant, selectSessions, filterDrills, filterSessions, isoWeek, periodStats, drillProblems, duplicateDrill, migrateDrill, moveIndex, newDrill, upsertDrill, validateDb } from './model'
 import { sihfPlan } from './sihf'
 import type { Db, Drill } from './types'
 
@@ -148,7 +148,7 @@ test('mergeDb adds new records, skips identical ones and copies conflicting ones
   theirs.collections[0].drillIds.push('new')
   const { db, added, skipped } = mergeDb(mine, theirs)
   expect(skipped).toBe(1) // the unchanged session
-  expect(added).toEqual({ drills: 2, collections: 1, sessions: 0, players: 0, plans: 0 }) // the collection was combined, not copied
+  expect(added).toEqual({ drills: 2, collections: 1, sessions: 0, players: 0, plans: 0, games: 0 }) // the collection was combined, not copied
   expect(db.drills.map((d) => d.title)).toEqual(['Give and Go', 'Geändert (Import)', 'Neu'])
   expect(db.collections).toHaveLength(1)
   expect(db.collections[0].drillIds).toEqual([mine.drills[0].id, db.drills[1].id, 'new']) // original kept, copy and new drill appended
@@ -248,4 +248,48 @@ test('existing data gets the 20-player starting team once', () => {
   const team = migrateDb(sample()).players!
   expect(team.map((p) => p.position).join('')).toBe('GG' + 'D'.repeat(6) + 'F'.repeat(12))
   expect(migrateDb({ ...sample(), players: [] }).players).toEqual([])
+})
+
+test('toIcs exports dated trainings with times, escaping and folding', () => {
+  const d = drill({ title: 'Pass, Schuss; Tor' })
+  const timed = { ...addEntries({ id: 's1', title: 'Dienstag', date: '2026-10-13', start: '17:30', final: true, notes: 'Fokus\nPassen', entries: [] }, [d]) }
+  const allDay = { id: 's2', title: 'Ä'.repeat(60), date: '2026-10-14', entries: [] }
+  const ics = toIcs([timed, allDay, { id: 't', title: 'Vorlage', template: true, date: '2026-10-15', entries: [] }, { id: 'u', title: 'Ohne Datum', entries: [] }], [], new Date('2026-10-15T08:09:10Z'))
+  const lines = ics.split('\r\n')
+  expect(ics.endsWith('END:VCALENDAR\r\n')).toBe(true)
+  expect(lines.filter((l) => l === 'BEGIN:VEVENT')).toHaveLength(2)
+  expect(lines).toContain('DTSTAMP:20261015T080910Z')
+  expect(lines).toContain('DTSTART:20261013T173000')
+  expect(lines).toContain('DURATION:PT12M')
+  expect(lines).toContain('STATUS:CONFIRMED')
+  expect(lines).toContain('DESCRIPTION:Pass\\, Schuss\\; Tor (12 Min.)\\nFokus\\nPassen')
+  expect(lines).toContain('DTSTART;VALUE=DATE:20261014')
+  expect(lines).toContain('STATUS:TENTATIVE')
+  expect(lines.every((l) => new TextEncoder().encode(l).length <= 75)).toBe(true)
+  expect(ics.replace(/\r\n /g, '')).toContain(`SUMMARY:${'Ä'.repeat(60)}`)
+})
+
+test('toIcs exports dated games as 2-hour events', () => {
+  const lines = toIcs([], [{ id: 'g', opponent: 'EHC Chur', away: true, date: '2026-10-18', start: '14:00', lineup: {} }, { id: 'h', opponent: 'X', lineup: {} }]).split('\r\n')
+  expect(lines.filter((l) => l === 'BEGIN:VEVENT')).toHaveLength(1)
+  expect(lines).toContain('SUMMARY:Spiel: Auswärts bei EHC Chur')
+  expect(lines).toContain('DURATION:PT120M')
+})
+
+test('line-up: a player holds one slot; removing a player clears line-ups and attendance', () => {
+  let l = setSlot({}, 'F1-C', 'p1')
+  l = setSlot(l, 'F1-LW', 'p2')
+  l = setSlot(l, 'F2-C', 'p1') // moves p1
+  expect(l).toEqual({ 'F1-LW': 'p2', 'F2-C': 'p1' })
+  expect(setSlot(l, 'F1-LW', '')).toEqual({ 'F2-C': 'p1' })
+  const db = { ...sample(), players: [{ id: 'p1', name: 'A', position: 'F' as const }, { id: 'p2', name: 'B', position: 'F' as const }] }
+  db.sessions[0].attendance = ['p1', 'p2']
+  const after = removePlayer({ ...db, games: [{ id: 'g', opponent: 'Chur', lineup: l }] }, 'p1')
+  expect(after.games![0].lineup).toEqual({ 'F1-LW': 'p2' })
+  expect(after.sessions[0].attendance).toEqual(['p2'])
+  expect(after.players!.map((p) => p.id)).toEqual(['p2'])
+  expect(() => validateDb(after)).not.toThrow()
+  expect(() => validateDb({ ...after, games: [{ id: 'g', opponent: 'Chur', lineup: { 'F1-LW': 'p1' } }] })).toThrow('Aufstellung')
+  expect(() => validateDb({ ...after, games: [{ id: 'g', opponent: 'Chur', lineup: { X9: 'p2' } }] })).toThrow('Aufstellung')
+  expect(gameTitle({ id: 'g', opponent: 'Chur', lineup: {} })).toBe('Heim gegen Chur')
 })

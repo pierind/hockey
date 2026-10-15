@@ -89,5 +89,5 @@ test('coach workflow', async ({ page }) => {
   expect([backup.drills.length, backup.collections.length, backup.sessions.length, backup.players.length]).toEqual([1, 1, 1, 20])
   await page.locator('input[type=file]').setInputFiles(file)
   await page.getByRole('button', { name: 'Hinzufügen' }).click()
-  await expect(page.getByText('0 Übungen, 0 Sammlungen, 0 Trainings hinzugefügt; 23 bereits vorhanden.')).toBeVisible()
+  await expect(page.getByText('0 Übungen, 0 Sammlungen, 0 Trainings, 0 Spiele hinzugefügt; 23 bereits vorhanden.')).toBeVisible()
 })

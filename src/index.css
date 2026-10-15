@@ -223,6 +223,9 @@ input.short { width: 110px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
 .print-only { display: none; }
+.lineup { border-collapse: collapse; width: 100%; margin: 8px 0; }
+.lineup th, .lineup td { border: 1px solid #999; padding: 6px 8px; text-align: left; }
+.lineup small { color: #555; }
 
 @media (max-width: 1100px) {
   .editor { grid-template-columns: 220px minmax(0, 1fr); }

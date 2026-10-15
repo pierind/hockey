@@ -1,7 +1,8 @@
 import { useState } from 'react'
+import { download } from './db'
 import { HelpButton } from './Help'
 import { CategoryFilter, DrillSummary } from './Library'
-import { addEntries, blockMinutes, categoryCollections, clock, duplicateSession, filterSessions, fromTemplate, groupPlayers, monthKey, monthLabel, moveIndex, needs, timeline, totalMinutes } from './model'
+import { addEntries, blockMinutes, categoryCollections, clock, duplicateSession, filterSessions, fromTemplate, groupPlayers, monthKey, monthLabel, moveIndex, needs, timeline, toIcs, totalMinutes } from './model'
 import type { Change } from './model'
 import { uid } from './scene'
 import type { Db, Drill, Session, SessionEntry } from './types'
@@ -9,6 +10,12 @@ import type { Db, Drill, Session, SessionEntry } from './types'
 export const StatusBadge = ({ s }: { s: Session }) =>
   s.template ? <span className="status-badge template">▤ Vorlage</span>
     : s.final ? <span className="status-badge final">✓ Definitiv</span> : <span className="status-badge draft">✎ Entwurf</span>
+
+// Exports dated trainings and games together; shown on both tabs.
+export const CalendarButton = ({ db }: { db: Db }) =>
+  db.sessions.some((s) => s.date && !s.template) || (db.games ?? []).some((g) => g.date)
+    ? <button onClick={() => download('eishockey-kalender.ics', 'text/calendar', toIcs(db.sessions, db.games ?? []))}>Kalender (.ics)</button>
+    : null
 
 export function Sessions({ db, change, onEditEntry }: { db: Db; change: Change; onEditEntry: (sessionId: string, entry: SessionEntry) => void }) {
   const [openId, setOpenId] = useState<string | null>(null)
@@ -55,6 +62,7 @@ export function Sessions({ db, change, onEditEntry }: { db: Db; change: Change; 
             </optgroup>
           </select>
         )}
+        <CalendarButton db={db} />
       </div>
       <div className="row">
         <input type="search" aria-label="Trainings durchsuchen" placeholder="Suchen…" value={q} onChange={(e) => setQ(e.target.value)} />

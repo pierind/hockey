@@ -1,4 +1,5 @@
 import { HelpButton } from './Help'
+import { removePlayer } from './model'
 import type { Change } from './model'
 import { uid } from './scene'
 import type { Db, Player } from './types'
@@ -9,12 +10,8 @@ export function Team({ db, change }: { db: Db; change: Change }) {
   const upd = (id: string, patch: Partial<Player>) =>
     change((db) => ({ ...db, players: (db.players ?? []).map((p) => (p.id === id ? { ...p, ...patch } : p)) }))
   const remove = (p: Player) =>
-    confirm(`${p.name} aus dem Team entfernen? Die Anwesenheit in bisherigen Trainings wird ebenfalls entfernt.`) &&
-    change((db) => ({
-      ...db,
-      players: (db.players ?? []).filter((x) => x.id !== p.id),
-      sessions: db.sessions.map((s) => (s.attendance ? { ...s, attendance: s.attendance.filter((x) => x !== p.id) } : s)),
-    }))
+    confirm(`${p.name} aus dem Team entfernen? Die Anwesenheit in bisherigen Trainings und die Einteilung in Spiel-Aufstellungen werden ebenfalls entfernt.`) &&
+    change((db) => removePlayer(db, p.id))
 
   return (
     <section>

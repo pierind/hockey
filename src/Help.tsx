@@ -70,6 +70,7 @@ const HELP = {
         <li>Übungen werden als <b>Kopie</b> eingeplant: spätere Änderungen in der Bibliothek ändern ein Training nicht. Dieselbe Übung darf mehrmals vorkommen.</li>
         <li>Reihenfolge: am Griff ⠿ ziehen oder «Nach oben / Nach unten». Eine ungültige Dauer wird nicht übernommen.</li>
         <li><b>Drucken / PDF</b> erstellt ein Trainingsblatt mit Diagrammen (im Druckdialog «Als PDF sichern»).</li>
+        <li><b>Kalender (.ics)</b> lädt alle Trainings und Spiele mit Datum als Kalenderdatei herunter (Apple, Google, Outlook). Mit Startzeit als Termin mit Dauer, sonst ganztägig; Entwürfe erscheinen als «vorläufig». Erneut importieren aktualisiert die Termine statt sie zu verdoppeln (je nach Kalender-App).</li>
       </ul>
     ),
   },
@@ -92,6 +93,19 @@ const HELP = {
         <li>Pro Woche planen: Monat, Spezial (z. B. Elterninfo, Trainingslager), die geplanten <b>Trainings</b> mit ihren Ziel-Schlüsselelementen, das begleitende Off-Ice-Ziel, das Persönlichkeitsziel, Notizen und eine Pause danach.</li>
         <li><b>Wochenbeginn</b> setzen verbindet die Woche mit dem Kalender. «Folgende Wochen datieren» setzt die restlichen Wochen der Phase im Wochenabstand; nach einer Pause die erste Woche neu setzen und erneut datieren.</li>
         <li><b>Ist</b>: datierte Wochen zeigen die Trainings dieser Woche. Bei jedem geplanten Ziel steht ✓, wenn eine Übung in diesen Trainings das Schlüsselelement hat, sonst ○. «Training anlegen» erstellt ein Training in dieser Woche mit den Zielen in den Notizen.</li>
+      </ul>
+    ),
+  },
+  games: {
+    title: 'Spiele',
+    body: (
+      <ul>
+        <li>«Neues Spiel» erfassen: Gegner, Heim oder Auswärts, Datum und Startzeit.</li>
+        <li><b>Aufstellung</b>: 4 Sturmlinien (LW, C, RW), 3 Verteidigungspaare (LD, RD) und 2 Torhüter/innen. In jeder Auswahl stehen die passenden Positionen zuoberst; wer schon eingeteilt ist, ist markiert und wechselt beim Auswählen den Platz. Darunter steht, wer noch nicht eingeteilt ist.</li>
+        <li><b>Übernehmen von…</b> kopiert die Aufstellung eines anderen Spiels, z. B. die Standard-Aufstellung, und lässt sich danach anpassen.</li>
+        <li><b>Drucken / PDF</b> erstellt ein Spielblatt mit der Aufstellung und den Notizen.</li>
+        <li>Spiele zählen nicht in der Auswertung der Trainings und nicht im Saisonplan. Mit «Kalender (.ics)» kommen sie mit 2 Stunden Dauer in den Kalender.</li>
+        <li>Wird eine Spielerin oder ein Spieler aus dem Team entfernt, verschwindet sie oder er auch aus allen Aufstellungen.</li>
       </ul>
     ),
   },

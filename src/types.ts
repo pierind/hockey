@@ -60,6 +60,8 @@ export type Collection = { id: string; name: string; description?: string; drill
 // drill is a snapshot. parallel: same Posten-Block as the previous entry (groups rotate through every Posten).
 export type SessionEntry = { id: string; drill: Drill; minutes: number; notes: string; parallel?: boolean }
 export type Session = { id: string; title: string; date?: string; start?: string /* 'HH:MM' */; final?: boolean; template?: boolean; notes?: string; attendance?: string[] /* present player ids; unset = not recorded */; entries: SessionEntry[] } // final: definitive, otherwise a draft/plan
+// lineup: slot id (see LINEUP_SLOTS) -> player id.
+export type Game = { id: string; opponent: string; away?: boolean; date?: string; start?: string /* 'HH:MM' */; notes?: string; lineup: Record<string, string> }
 export type Player = { id: string; name: string; number?: number; position: 'F' | 'D' | 'G'; group?: string }
 // Season plan: one row per phase week, like the SIHF Jahresablauf. trainings: target Schlüsselelemente per planned training.
 export type PlanWeek = {
@@ -76,5 +78,5 @@ export type PlanWeek = {
   breakAfter?: string // e.g. 'Sommerpause'
 }
 export type SeasonPlan = { id: string; name: string; weeks: PlanWeek[] }
-// players/plans are optional so backups from before they existed stay valid.
-export type Db = { version: 1; drills: Drill[]; collections: Collection[]; sessions: Session[]; players?: Player[]; plans?: SeasonPlan[] }
+// players/plans/games are optional so backups from before they existed stay valid.
+export type Db = { version: 1; drills: Drill[]; collections: Collection[]; sessions: Session[]; players?: Player[]; plans?: SeasonPlan[]; games?: Game[] }

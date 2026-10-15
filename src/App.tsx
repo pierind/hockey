@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { Board } from './Board'
 import { Collections } from './Collections'
 import { Dashboard } from './Dashboard'
-import { load, store } from './db'
+import { download, load, store } from './db'
 import { Editor } from './Editor'
+import { Games } from './Games'
 import { Help, HelpButton } from './Help'
 import { Library } from './Library'
 import { emptyDb, mergeDb, migrateDb, migrateDrill, saveVariant, upsertDrill, validateDb } from './model'
@@ -14,7 +15,7 @@ import { Sessions } from './Sessions'
 import { Team } from './Team'
 import type { Db, Drill } from './types'
 
-const TABS = [['library', 'Bibliothek'], ['collections', 'Sammlungen'], ['sessions', 'Trainings'], ['season', 'Saisonplan'], ['team', 'Team'], ['board', 'Taktiktafel'], ['dashboard', 'Auswertung'], ['help', 'Hilfe']] as const
+const TABS = [['library', 'Bibliothek'], ['collections', 'Sammlungen'], ['sessions', 'Trainings'], ['games', 'Spiele'], ['season', 'Saisonplan'], ['team', 'Team'], ['board', 'Taktiktafel'], ['dashboard', 'Auswertung'], ['help', 'Hilfe']] as const
 type Tab = (typeof TABS)[number][0]
 
 export function App() {
@@ -68,12 +69,7 @@ export function App() {
   }
 
   function exportBackup() {
-    const blob = new Blob([JSON.stringify(current.current, null, 2)], { type: 'application/json' })
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = `eishockey-backup-${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+    download(`eishockey-backup-${new Date().toISOString().slice(0, 10)}.json`, 'application/json', JSON.stringify(current.current, null, 2))
   }
 
   async function importBackup(file: File) {
@@ -98,7 +94,7 @@ export function App() {
     }
     const r = mergeDb(current.current, next)
     change(() => r.db).then(
-      () => setStatus(`Import: ${r.added.drills} Übungen, ${r.added.collections} Sammlungen, ${r.added.sessions} Trainings hinzugefügt; ${r.skipped} bereits vorhanden.`),
+      () => setStatus(`Import: ${r.added.drills} Übungen, ${r.added.collections} Sammlungen, ${r.added.sessions} Trainings, ${r.added.games} Spiele hinzugefügt; ${r.skipped} bereits vorhanden.`),
       () => {},
     )
   }
@@ -145,7 +141,7 @@ export function App() {
           {pending && (
             <>
               <h3>Backup importieren</h3>
-              <p>Die Datei enthält {pending.drills.length} Übungen, {pending.collections.length} Sammlungen und {pending.sessions.length} Trainings.</p>
+              <p>Die Datei enthält {pending.drills.length} Übungen, {pending.collections.length} Sammlungen, {pending.sessions.length} Trainings und {(pending.games ?? []).length} Spiele.</p>
               <div className="row">
                 <button className="primary" onClick={() => applyImport('merge')}>Hinzufügen</button>
                 <button onClick={() => applyImport('replace')}>Alles ersetzen</button>
@@ -164,6 +160,7 @@ export function App() {
         {tab === 'board' && <Board />}
         {tab === 'help' && <Help />}
       </div>
+      {tab === 'games' && <Games db={db} change={change} />}
       {tab === 'sessions' && <Sessions db={db} change={change} onEditEntry={(sessionId, e) => setEditing({ drill: { ...structuredClone(e.drill), id: uid() }, variant: { sessionId, entryId: e.id, title: e.drill.title } })} />}
       </main>
       </div>
