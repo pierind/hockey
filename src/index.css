@@ -90,6 +90,9 @@ main > .status { background: var(--surface); border-left: 3px solid var(--accent
   background: repeating-linear-gradient(135deg, #f7fafc 0 10px, #eef3f8 10px 20px); color: var(--muted); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; font-size: 0.85rem;
 }
 .thumb .office-thumb { border: 0; border-radius: 0; }
+.drill-image { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.thumb .drill-image { border: 0; border-radius: 0; aspect-ratio: 62 / 32; object-fit: contain; }
+.original { display: grid; gap: 4px; font-size: 0.85rem; }
 details.card { padding: 0; margin-bottom: 10px; }
 details.card summary { cursor: pointer; font-weight: 600; padding: 10px 14px; list-style-position: inside; border-radius: var(--radius); }
 details.card summary:hover { background: #f7fafc; }

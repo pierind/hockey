@@ -375,6 +375,8 @@ function checkDrill(d: unknown, w: string) {
   need(opt(d.minutes, (m) => isNum(m) && m >= 0), `${w}: ungültige Dauer`)
   need(opt(d.players, (m) => isNum(m) && m >= 0) && opt(d.goalies, (m) => isNum(m) && m >= 0) && opt(d.material, isStr), `${w}: ungültige Angaben zu Spieler/innen oder Material`)
   need(typeof d.offIce === 'boolean' && typeof d.draft === 'boolean', `${w}: Felder fehlen`)
+  // Imported files are untrusted: only http(s) links and inline images, never javascript: or other schemes.
+  need(opt(d.source, (s) => isStr(s) && /^https?:\/\//.test(s)) && opt(d.image, (s) => isStr(s) && /^(https:\/\/|data:image\/(png|jpeg|gif|webp);base64,)/.test(s)), `${w}: ungültige Quelle oder ungültiges Bild`)
   need(isObj(d.scene) && RINKS.includes(d.scene.rink as string) && Array.isArray(d.scene.items), `${w}: ungültiges Diagramm`)
   d.scene.items.forEach((it, i) => checkItem(it, `${w}, Element ${i + 1}`))
   need(unique(d.scene.items.map((it: Obj) => it.id)), `${w}: doppelte Element-IDs`)

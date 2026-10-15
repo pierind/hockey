@@ -96,7 +96,7 @@ test('old Spielfeldbegrenzung lines open as Toblerones along the same line', () 
 test('category collections follow the drills\' Erscheinungsformen', () => {
   const db = sample()
   const auto = categoryCollections(db)
-  expect(auto).toHaveLength(9)
+  expect(auto).toHaveLength(10)
   expect(auto.find((c) => c.id === 'EF06')?.drillIds).toEqual([db.drills[0].id])
   expect(auto.find((c) => c.id === 'EF01')?.drillIds).toEqual([])
 })
@@ -135,7 +135,7 @@ test('selectSessions filters by status and inclusive date range, dropping undate
 test('categoryMinutes splits a drill\'s minutes across its Erscheinungsformen', () => {
   const { periods, rows } = categoryMinutes(sample().sessions, () => 'total')
   expect(periods).toEqual(['total'])
-  expect(rows).toHaveLength(9)
+  expect(rows).toHaveLength(10)
   expect(rows.find((r) => r.category === 'EF06')?.total).toBe(12) // 2 entries × 12 min, half each to EF06 and EF08
   expect(rows.reduce((sum, r) => sum + r.total, 0)).toBe(24)
 })
@@ -292,4 +292,13 @@ test('line-up: a player holds one slot; removing a player clears line-ups and at
   expect(() => validateDb({ ...after, games: [{ id: 'g', opponent: 'Chur', lineup: { 'F1-LW': 'p1' } }] })).toThrow('Aufstellung')
   expect(() => validateDb({ ...after, games: [{ id: 'g', opponent: 'Chur', lineup: { X9: 'p2' } }] })).toThrow('Aufstellung')
   expect(gameTitle({ id: 'g', opponent: 'Chur', lineup: {} })).toBe('Heim gegen Chur')
+})
+
+test('imported drills: source must be http(s), image https or an inline image', () => {
+  const ok = (d: Partial<Drill>) => () => validateDb({ ...sample(), drills: [drill(d)], collections: [] })
+  expect(ok({ source: 'https://www.mobilesport.ch/?p=1335', image: 'https://www.mobilesport.ch/a.jpg' })).not.toThrow()
+  expect(ok({ image: 'data:image/png;base64,iVBORw0KGgo=' })).not.toThrow()
+  expect(ok({ source: 'javascript:alert(1)' })).toThrow('Quelle')
+  expect(ok({ image: 'http://example.com/a.jpg' })).toThrow('Bild')
+  expect(ok({ image: 'data:text/html;base64,PHNjcmlwdD4=' })).toThrow('Bild')
 })

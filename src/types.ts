@@ -54,6 +54,8 @@ export type Drill = {
   offIce: boolean
   draft: boolean
   scene: Scene
+  source?: string // https link to where an imported drill comes from
+  image?: string // original diagram of an imported drill: https or data:image URL, shown until a scene is drawn
   updatedAt: string
 }
 export type Collection = { id: string; name: string; description?: string; drillIds: string[] }

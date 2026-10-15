@@ -224,7 +224,7 @@ Acceptance:
 
 - Reloading preserves diagram objects, title, description, key points and categories.
 - Duplicating then editing does not mutate the original.
-- All nine source categories are selectable with their exact German labels.
+- All nine source categories are selectable with their exact German labels, plus the goalie Erscheinungsform EF10 «Sich als Torhüter/in agil verschieben und zum Puck ausrichten sowie aktiv mitspielen» (from the SIHF «Manual Eishockey – Jugendliche», not in the U12 plan; no Schlüsselelemente).
 - Export/import round-trip preserves editable scenes and record relationships.
 - Invalid import and failed storage leave existing saved data intact.
 - Unsaved edits are not discarded silently.

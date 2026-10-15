@@ -227,3 +227,6 @@ playwright-report/
 
 # macOS
 .DS_Store
+
+# Drills fetched for private use (scripts/import-*.mjs), never commit
+private/

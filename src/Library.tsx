@@ -6,9 +6,12 @@ import { HelpButton } from './Help'
 import { categories, categoryLabel, elements } from './sihf'
 import type { Db, Drill } from './types'
 
-// Off-ice drills without a diagram get a placeholder instead of an empty rink.
+// Until a diagram is drawn: the imported original image, or a placeholder for off-ice drills, instead of an empty rink.
+// shortcut: https images load from the source site, so they need a connection; inline them as data: URLs if offline matters.
 const Picture = ({ drill }: { drill: Drill }) =>
-  drill.offIce && !drill.scene.items.length ? <div className="office-thumb" aria-hidden>Off-Ice</div> : <Thumb scene={drill.scene} aria-label={`Diagramm: ${drill.title}`} />
+  drill.scene.items.length ? <Thumb scene={drill.scene} aria-label={`Diagramm: ${drill.title}`} />
+    : drill.image ? <img className="drill-image" src={drill.image} alt={`Original-Diagramm: ${drill.title}`} loading="lazy" referrerPolicy="no-referrer" />
+    : drill.offIce ? <div className="office-thumb" aria-hidden>Off-Ice</div> : <Thumb scene={drill.scene} aria-label={`Diagramm: ${drill.title}`} />
 
 export function DrillSummary({ drill }: { drill: Drill }) {
   return (
@@ -21,6 +24,7 @@ export function DrillSummary({ drill }: { drill: Drill }) {
         )}
         {drill.description && <p className="pre">{drill.description}</p>}
         {drill.keyPoints.length > 0 && <ul>{drill.keyPoints.map((k, i) => <li key={i}>{k}</li>)}</ul>}
+        {drill.source && <p className="hint"><a href={drill.source} target="_blank" rel="noreferrer">Quelle: {new URL(drill.source).hostname}</a></p>}
       </div>
     </div>
   )
