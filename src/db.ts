@@ -24,3 +24,12 @@ async function run<T>(mode: IDBTransactionMode, op: (store: IDBObjectStore) => I
 export const load = <T>(key: string) => run<T | undefined>('readonly', (s) => s.get(key))
 export const store = (key: string, value: unknown) => run<void>('readwrite', (s) => s.put(value, key))
 export const remove = (key: string) => run<void>('readwrite', (s) => s.delete(key))
+
+// Hands a generated file to the browser's download.
+export function download(name: string, type: string, text: string) {
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(new Blob([text], { type }))
+  a.download = name
+  a.click()
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+}

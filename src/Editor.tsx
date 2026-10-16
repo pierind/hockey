@@ -315,6 +315,12 @@ function DrillForm({ d, set }: { d: Drill; set: (patch: Partial<Drill>) => void 
     <form className="details" onSubmit={(e) => e.preventDefault()}>
       <label>Titel <input value={d.title} onChange={(e) => set({ title: e.target.value })} /></label>
       <label>Beschreibung (Aufbau und Ablauf) <textarea rows={5} value={d.description} onChange={(e) => set({ description: e.target.value })} /></label>
+      {(d.image || d.source) && (
+        <div className="original">
+          {d.image && <img className="drill-image" src={d.image} alt={`Original-Diagramm: ${d.title}`} referrerPolicy="no-referrer" />}
+          {d.source && <a href={d.source} target="_blank" rel="noreferrer">Quelle: {new URL(d.source).hostname}</a>}
+        </div>
+      )}
       <fieldset>
         <legend>Coaching-Punkte</legend>
         <ol>

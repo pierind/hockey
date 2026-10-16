@@ -15,6 +15,16 @@ npm run build   # static site in dist/
 npm run e2e     # browser workflow + offline test (first time: npx playwright install chromium)
 ```
 
+## Import drills (private use)
+
+```sh
+node scripts/import-mobilesport.mjs   # → private/mobilesport.json (121 drills from mobilesport.ch)
+```
+
+Load the file with «Backup importieren → Hinzufügen». Imported drills arrive as drafts with the original
+diagram (loaded from the source site, so online only) and a source link; draw your own diagram to replace it.
+`private/` is gitignored: the fetched content is for private use and must not be committed to this public repo.
+
 ## Publish
 
 `.github/workflows/pages.yml` builds and deploys to GitHub Pages on every push to `main`

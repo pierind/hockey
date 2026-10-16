@@ -90,6 +90,15 @@ main > .status { background: var(--surface); border-left: 3px solid var(--accent
   background: repeating-linear-gradient(135deg, #f7fafc 0 10px, #eef3f8 10px 20px); color: var(--muted); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; font-size: 0.85rem;
 }
 .thumb .office-thumb { border: 0; border-radius: 0; }
+.drill-image { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.thumb .drill-image { border: 0; border-radius: 0; aspect-ratio: 62 / 32; object-fit: contain; }
+.original { display: grid; gap: 4px; font-size: 0.85rem; }
+.picker { position: relative; }
+.picker-list { position: absolute; z-index: 5; left: 0; min-width: 100%; width: max-content; max-width: min(480px, 90vw); max-height: 320px; overflow: auto; margin: 2px 0 0; padding: 4px; list-style: none; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); }
+.picker-list button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 6px 8px; white-space: normal; }
+.picker-list button:hover, .picker-list button:focus-visible { background: #f7fafc; }
+.picker-list small { color: var(--muted); }
+.picker-list .hint { padding: 6px 8px; }
 details.card { padding: 0; margin-bottom: 10px; }
 details.card summary { cursor: pointer; font-weight: 600; padding: 10px 14px; list-style-position: inside; border-radius: var(--radius); }
 details.card summary:hover { background: #f7fafc; }
@@ -199,7 +208,33 @@ section > .help-section { background: var(--surface); border: 1px solid var(--li
 .board-canvas { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 8px; }
 .board-canvas svg { touch-action: none; max-height: calc(100dvh - 170px); cursor: crosshair; }
 
+/* Season plan and team */
+.phase { margin: 22px 0 8px; color: var(--navy-2); }
+.week summary .badge { margin-left: 6px; }
+.week-body { display: grid; gap: 6px; }
+.week-body h4 { margin: 8px 0 2px; }
+.slots { margin: 0; padding-left: 0; list-style: none; display: grid; gap: 6px; }
+.slot-no { min-width: 30px; color: var(--muted); }
+.goal-rows h4 { margin: 0 6px 0 0; min-width: 190px; }
+.chip.goal { max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip.goal.done { background: #e3f5e3; border-color: #9fd59f; }
+.chip-x { border: 0; background: none; padding: 0 0 0 6px; font-size: 0.9rem; line-height: 1; color: var(--muted); }
+.pause { text-align: center; color: var(--muted); font-weight: 600; letter-spacing: 0.04em; margin: 4px 0 14px; }
+.pause::before, .pause::after { content: ' —— '; }
+.grow { flex: 1; min-width: 240px; }
+.grow textarea { width: 100%; }
+input.short { width: 110px; }
+.team input { width: 100%; min-width: 120px; }
+.team input.num { width: 64px; min-width: 0; }
+.team td:last-child { width: auto; }
+.roster { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin: 10px 14px; }
+.roster fieldset { border: 1px solid var(--line); border-radius: 8px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
 .print-only { display: none; }
+.lineup { border-collapse: collapse; width: 100%; margin: 8px 0; }
+.lineup th, .lineup td { border: 1px solid #999; padding: 6px 8px; text-align: left; }
+.lineup small { color: #555; }
 
 @media (max-width: 1100px) {
   .editor { grid-template-columns: 220px minmax(0, 1fr); }
