@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { download } from './db'
 import { HelpButton } from './Help'
-import { CategoryFilter, DrillSummary } from './Library'
+import { CategoryFilter, DrillPicker, DrillSummary } from './Library'
 import { addEntries, blockMinutes, categoryCollections, clock, duplicateSession, filterSessions, fromTemplate, groupPlayers, monthKey, monthLabel, moveIndex, needs, timeline, toIcs, totalMinutes } from './model'
 import type { Change } from './model'
 import { uid } from './scene'
@@ -135,13 +135,7 @@ function SessionEditor({ s, db, upd, onBack, onEdit }: { s: Session; db: Db; upd
           <button onClick={() => print()}>Drucken / PDF</button>
         </div>
         <div className="row">
-          <select aria-label="Übung aus der Bibliothek hinzufügen" value="" onChange={(e) => {
-            const d = db.drills.find((d) => d.id === e.target.value)
-            if (d) upd((s) => addEntries(s, [d]))
-          }}>
-            <option value="">Übung hinzufügen…</option>
-            {db.drills.map((d) => <option key={d.id} value={d.id}>{d.title || 'Ohne Titel'}{d.draft ? ' (Entwurf)' : ''}</option>)}
-          </select>
+          <DrillPicker drills={db.drills} label="Übung aus der Bibliothek hinzufügen" placeholder="Übung hinzufügen…" onPick={(d) => upd((s) => addEntries(s, [d]))} />
           <select aria-label="Alle Übungen einer Sammlung hinzufügen" value="" onChange={(e) => {
             const c = [...categoryCollections(db), ...db.collections].find((c) => c.id === e.target.value)
             const drills = c?.drillIds.map((id) => db.drills.find((d) => d.id === id)).filter((d): d is Drill => !!d) ?? []
@@ -216,13 +210,7 @@ function SessionEditor({ s, db, upd, onBack, onEdit }: { s: Session; db: Db; upd
                     <button disabled={!i} onClick={() => move(i, i - 1)}>Nach oben</button>
                     <button disabled={i === s.entries.length - 1} onClick={() => move(i, i + 1)}>Nach unten</button>
                     <button onClick={() => onEdit(e)}>Bearbeiten</button>
-                    <select aria-label={`${e.drill.title || 'Übung'} ersetzen`} value="" onChange={(ev) => {
-                      const d = db.drills.find((d) => d.id === ev.target.value)
-                      if (d) setEntry(e.id, { drill: structuredClone(d) })
-                    }}>
-                      <option value="">Ersetzen durch…</option>
-                      {db.drills.map((d) => <option key={d.id} value={d.id}>{d.title || 'Ohne Titel'}{d.draft ? ' (Entwurf)' : ''}</option>)}
-                    </select>
+                    <DrillPicker drills={db.drills} label={`${e.drill.title || 'Übung'} ersetzen`} placeholder="Ersetzen durch…" onPick={(d) => setEntry(e.id, { drill: structuredClone(d) })} />
                     <button onClick={() => upd((s) => ({ ...s, entries: s.entries.filter((x) => x.id !== e.id) }))}>Entfernen</button>
                   </div>
                   <DrillSummary drill={e.drill} />

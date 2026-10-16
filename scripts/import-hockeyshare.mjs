@@ -5,6 +5,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { oneCollection } from './one-collection.mjs'
 
 const BASE = 'https://www.hockeyshare.com'
 const UA = 'hockey-planner-private-importer/1.0 (personal drill library, 1 req/s)'
@@ -40,7 +41,7 @@ const text = (html) => html
 
 // HockeyShare category → SIHF Erscheinungsform, only where the meaning clearly matches.
 const EF = [[/^skating$/, 'EF03'], [/^(puck control|stickhandling)$/, 'EF05'], [/^passing$/, 'EF06'], [/^shooting$/, 'EF07'],
-  [/^power ?play$|^(\d) ?(on|v|-on-) ?(\d)$/, 'EF08'], [/^1 ?(on|v|-on-) ?1$|^battles?$|^(body )?checking$/, 'EF09']]
+  [/^power ?play$|^(\d) ?(on|v|-on-) ?(\d)$/, 'EF08'], [/^1 ?(on|v|-on-) ?1$|^battles?$|^(body )?checking$/, 'EF09'], [/^goalies?$|^goaltending$/, 'EF10']]
 function sihf(category) {
   const c = category.toLowerCase()
   const odd = c.match(/^(\d) ?(?:on|v|-on-) ?(\d)$/)
@@ -85,22 +86,16 @@ for (const [id, uuid] of list) {
     keyPoints, categories, ...(categories[0] && { primary: categories[0] }), elements: [],
     offIce: /dryland/i.test(category), draft: true, scene: { rink: 'full', items: [] },
     source, ...(image && { image }), updatedAt: `${modified ?? created ?? '2026-10-01'}T00:00:00.000Z`,
-    category, // removed below, only used for the collections
+    category, // removed below, only used for the self-check
   })
 }
 
-// Self-check: a drill page without title, description or category means the page layout changed.
-const bad = drills.filter((d) => !d.title || !d.category || !d.description.split('\n\n')[0] || d.description.startsWith('Category:') || /<\w/.test(d.description))
+// Self-check: a page without title, category or both text and diagram (or with leftover HTML) means the page layout changed.
+// About 20 drills are diagram-only (no Description/Key Points on the page), so empty text alone is allowed.
+const bad = drills.filter((d) => !d.title || !d.category || (/^(Animation|Category):/.test(d.description) && !d.keyPoints.length && !d.image) || /<\w/.test(d.description))
 if (bad.length) throw new Error(`Unvollständig: ${bad.map((d) => d.source).join(', ')}`)
 
-// 3. Collections: the sidebar categories, other (user-defined) categories under «Custom Categories», plus all.
-const standardOf = (c) => standard.find((s) => s.name.toLowerCase() === c.toLowerCase())
-const collections = [{ id: 'hs-c-all', name: 'HockeyShare (alle)', drillIds: drills.map((d) => d.id) }]
-for (const s of [...standard, { slug: 'custom-categories', name: 'Custom Categories' }]) {
-  const drillIds = drills.filter((d) => (standardOf(d.category)?.slug ?? 'custom-categories') === s.slug).map((d) => d.id)
-  if (drillIds.length) collections.push({ id: `hs-c-${s.slug}`, name: `HockeyShare: ${s.name}`, drillIds })
-}
 for (const d of drills) delete d.category
 mkdirSync(new URL('../private/', import.meta.url), { recursive: true })
-writeFileSync(new URL('../private/hockeyshare.json', import.meta.url), JSON.stringify({ version: 1, drills, collections, sessions: [] }, null, 2))
-console.log(`${drills.length} von ${total} Übungen, ${collections.length} Sammlungen → private/hockeyshare.json`)
+writeFileSync(new URL('../private/hockeyshare.json', import.meta.url), JSON.stringify({ version: 1, drills, collections: oneCollection(drills, [], 'hs-c-all', 'HockeyShare'), sessions: [] }, null, 2))
+console.log(`${drills.length} von ${total} Übungen → private/hockeyshare.json`)

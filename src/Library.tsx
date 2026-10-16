@@ -30,6 +30,32 @@ export function DrillSummary({ drill }: { drill: Drill }) {
   )
 }
 
+// Search field instead of a dropdown: with thousands of imported drills a <select> is unusable. Title matches come first.
+export function DrillPicker({ drills, label, placeholder = 'Übung suchen…', onPick }: { drills: Drill[]; label: string; placeholder?: string; onPick: (d: Drill) => void }) {
+  const [q, setQ] = useState('')
+  const needle = q.trim().toLowerCase()
+  const hits = needle ? filterDrills(drills, q, '', '', '').sort((a, b) => Number(!a.title.toLowerCase().includes(needle)) - Number(!b.title.toLowerCase().includes(needle))).slice(0, 12) : []
+  const pick = (d: Drill) => { onPick(d); setQ('') }
+  return (
+    <div className="picker">
+      <input type="search" aria-label={label} placeholder={placeholder} value={q} onChange={(e) => setQ(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Enter' && hits[0]) pick(hits[0]); if (e.key === 'Escape') setQ('') }} />
+      {needle && (
+        <ul className="picker-list">
+          {hits.length ? hits.map((d) => (
+            <li key={d.id}>
+              <button type="button" onClick={() => pick(d)}>
+                {d.title || 'Ohne Titel'}{d.draft ? ' (Entwurf)' : ''}{' '}
+                <small>{[d.minutes && `${d.minutes} Min.`, d.source && new URL(d.source).hostname.replace(/^www\./, '')].filter(Boolean).join(' · ')}</small>
+              </button>
+            </li>
+          )) : <li className="hint">Keine Übung gefunden.</li>}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 export function Chips({ drill }: { drill: Drill }) {
   return (
     <div>
@@ -55,12 +81,18 @@ export function CategoryFilter({ category, element, onChange }: { category: stri
   )
 }
 
+// Cards shown at once: thousands of imported drills with diagrams and collection pickers would take seconds to render.
+const PAGE = 60
+
 export function Library({ db, change, onEdit }: { db: Db; change: Change; onEdit: (d: Drill) => void }) {
   const [q, setQ] = useState('')
   const [category, setCategory] = useState('')
   const [element, setElement] = useState('')
   const [place, setPlace] = useState<'' | 'on' | 'off'>('')
+  const [shown, setShown] = useState(PAGE)
   const list = filterDrills(db.drills, q, category, element, place)
+  // A new search or filter starts again at the first page.
+  const filter = (fn: () => void) => { fn(); setShown(PAGE) }
 
   function del(d: Drill) {
     const cols = db.collections.filter((c) => c.drillIds.includes(d.id)).map((c) => c.name)
@@ -76,9 +108,9 @@ export function Library({ db, change, onEdit }: { db: Db; change: Change; onEdit
         <button className="primary" onClick={() => onEdit(newDrill())}>Neue Übung</button>
       </div>
       <div className="row">
-        <input type="search" aria-label="Suchen in Titel, Beschreibung und Coaching-Punkten" placeholder="Suchen…" value={q} onChange={(e) => setQ(e.target.value)} />
-        <CategoryFilter category={category} element={element} onChange={(c, e) => { setCategory(c); setElement(e) }} />
-        <select aria-label="Ort" value={place} onChange={(e) => setPlace(e.target.value as '' | 'on' | 'off')}>
+        <input type="search" aria-label="Suchen in Titel, Beschreibung und Coaching-Punkten" placeholder="Suchen…" value={q} onChange={(e) => filter(() => setQ(e.target.value))} />
+        <CategoryFilter category={category} element={element} onChange={(c, e) => filter(() => { setCategory(c); setElement(e) })} />
+        <select aria-label="Ort" value={place} onChange={(e) => filter(() => setPlace(e.target.value as '' | 'on' | 'off'))}>
           <option value="">Auf dem Eis und Off-Ice</option>
           <option value="on">Auf dem Eis</option>
           <option value="off">Off-Ice</option>
@@ -89,8 +121,9 @@ export function Library({ db, change, onEdit }: { db: Db; change: Change; onEdit
       ) : list.length === 0 ? (
         <p className="empty">Keine Übung passt zu Suche und Filter.</p>
       ) : (
+        <>
         <ul className="cards">
-          {list.map((d) => (
+          {list.slice(0, shown).map((d) => (
             <li key={d.id} className="card">
               <button className="thumb" onClick={() => onEdit(d)} aria-label={`${d.title || 'Ohne Titel'} öffnen`}>
                 <Picture drill={d} />
@@ -115,6 +148,14 @@ export function Library({ db, change, onEdit }: { db: Db; change: Change; onEdit
             </li>
           ))}
         </ul>
+        {list.length > shown && (
+          <div className="row">
+            <span className="hint">{shown} von {list.length} Übungen</span>
+            <button onClick={() => setShown((n) => n + PAGE)}>Mehr anzeigen</button>
+            <button onClick={() => setShown(list.length)}>Alle anzeigen</button>
+          </div>
+        )}
+        </>
       )}
     </section>
   )

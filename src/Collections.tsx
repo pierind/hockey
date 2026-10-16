@@ -1,12 +1,21 @@
 import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { HelpButton } from './Help'
+import { DrillPicker } from './Library'
 import { categoryCollections } from './model'
 import type { Change } from './model'
 import { uid } from './scene'
 import type { Collection, Db, Drill } from './types'
 
+// Imported collections hold hundreds of drills; a collection's rows and drill picker are only built while it is open.
+function Fold({ summary, initial = false, children }: { summary: string; initial?: boolean; children: () => ReactNode }) {
+  const [open, setOpen] = useState(initial)
+  return <details className="card" open={open} onToggle={(e) => setOpen(e.currentTarget.open)}><summary>{summary}</summary>{open && children()}</details>
+}
+
 export function Collections({ db, change, onEdit }: { db: Db; change: Change; onEdit: (d: Drill) => void }) {
   const [name, setName] = useState('')
+  const byId = new Map(db.drills.map((d) => [d.id, d]))
   const upd = (id: string, fn: (c: Collection) => Collection) =>
     change((db) => ({ ...db, collections: db.collections.map((c) => (c.id === id ? fn(c) : c)) }))
 
@@ -15,17 +24,16 @@ export function Collections({ db, change, onEdit }: { db: Db; change: Change; on
       <div className="row"><h2>Sammlungen</h2><HelpButton topic="collections" /></div>
       <h3>Nach Erscheinungsform</h3>
       {categoryCollections(db).map((c) => (
-        <details key={c.id} className="card">
-          <summary>{c.name} ({c.drillIds.length})</summary>
-          {c.drillIds.length === 0 ? <p className="empty">Noch keine Übungen.</p> : (
+        <Fold key={c.id} summary={`${c.name} (${c.drillIds.length})`}>
+          {() => c.drillIds.length === 0 ? <p className="empty">Noch keine Übungen.</p> : (
             <ul>
               {c.drillIds.map((id) => {
-                const d = db.drills.find((d) => d.id === id)!
+                const d = byId.get(id)!
                 return <li key={id}><button className="link" onClick={() => onEdit(d)}>{d.title || 'Ohne Titel'}</button>{d.draft && <span className="badge">Entwurf</span>}</li>
               })}
             </ul>
           )}
-        </details>
+        </Fold>
       ))}
       <h3>Eigene Sammlungen</h3>
       <form className="row" onSubmit={(e) => {
@@ -39,7 +47,7 @@ export function Collections({ db, change, onEdit }: { db: Db; change: Change; on
       </form>
       {db.collections.length === 0 && <p className="empty">Noch keine Sammlungen.</p>}
       {db.collections.map((c) => (
-        <div key={c.id} className="card">
+        <Fold key={c.id} summary={`${c.name} (${c.drillIds.length})`} initial={!c.drillIds.length}>{() => (<>
           <div className="row">
             <input aria-label="Name der Sammlung" defaultValue={c.name} onBlur={(e) => {
               const n = e.target.value.trim()
@@ -55,7 +63,7 @@ export function Collections({ db, change, onEdit }: { db: Db; change: Change; on
           {c.drillIds.length === 0 ? <p className="empty">Noch leer.</p> : (
             <ul>
               {c.drillIds.map((id) => {
-                const d = db.drills.find((d) => d.id === id)
+                const d = byId.get(id)
                 return d && (
                   <li key={id}>
                     <button className="link" onClick={() => onEdit(d)}>{d.title || 'Ohne Titel'}</button>{' '}
@@ -65,14 +73,9 @@ export function Collections({ db, change, onEdit }: { db: Db; change: Change; on
               })}
             </ul>
           )}
-          <select aria-label={`Übung zu ${c.name} hinzufügen`} value="" onChange={(e) => {
-            const id = e.target.value
-            upd(c.id, (c) => ({ ...c, drillIds: [...c.drillIds, id] }))
-          }}>
-            <option value="">Übung hinzufügen…</option>
-            {db.drills.filter((d) => !c.drillIds.includes(d.id)).map((d) => <option key={d.id} value={d.id}>{d.title || 'Ohne Titel'}</option>)}
-          </select>
-        </div>
+          <DrillPicker drills={db.drills.filter((d) => !c.drillIds.includes(d.id))} label={`Übung zu ${c.name} hinzufügen`} placeholder="Übung hinzufügen…"
+            onPick={(d) => upd(c.id, (c) => ({ ...c, drillIds: [...c.drillIds, d.id] }))} />
+        </>)}</Fold>
       ))}
     </section>
   )

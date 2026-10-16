@@ -2,6 +2,7 @@
 // Private use only: the output goes to private/ (gitignored) and must never be committed, this repo is public.
 // Usage: node scripts/import-hockeyakademin.mjs   → private/hockeyakademin.json (~150 requests, 1 per second)
 import { mkdirSync, writeFileSync } from 'node:fs'
+import { oneCollection } from './one-collection.mjs'
 
 const SITE = 'https://hockeyakademin.se'
 const UA = 'HockeyPlannerPrivateImporter/1.0 (private, non-commercial drill import; 1 req/s)'
@@ -75,5 +76,5 @@ if (missing.length || drills.length < 100) throw new Error(`Unvollständig (${dr
 const collections = [{ id: 'sha-c-all', name: 'Hockeyakademin (alle)', drillIds: drills.map((d) => d.id) },
   ...[...groups].map(([slug, g]) => ({ id: `sha-c-${slug}`, name: `Hockeyakademin: ${g.name}`, drillIds: g.drillIds }))]
 mkdirSync(new URL('../private/', import.meta.url), { recursive: true })
-writeFileSync(new URL('../private/hockeyakademin.json', import.meta.url), JSON.stringify({ version: 1, drills, collections, sessions: [] }, null, 2))
-console.log(`\n${drills.length} Übungen, ${collections.length} Sammlungen → private/hockeyakademin.json`)
+writeFileSync(new URL('../private/hockeyakademin.json', import.meta.url), JSON.stringify({ version: 1, drills, collections: oneCollection(drills, collections, 'sha-c-all', 'Hockeyakademin'), sessions: [] }, null, 2))
+console.log(`\n${drills.length} Übungen → private/hockeyakademin.json`)

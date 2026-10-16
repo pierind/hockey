@@ -6,6 +6,7 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { oneCollection } from './one-collection.mjs'
 
 // Linked from https://www.iihf.com/en/statichub/20883/learn-to-play (2026-10); C and D both carry the «6-3» prefix there.
 const BASE = 'https://blob.iihf.com/iihf-media/iihfmvc/media/downloads/sport%20files/development-guide/ltp/'
@@ -241,7 +242,6 @@ for (const [level, file] of Object.entries(MANUALS)) {
 }
 const bad = [...drills.filter((d) => !d.title || !d.description.split('\n\n')[0]).map((d) => d.id), ...collections.filter((c) => c.drillIds.length < 2).map((c) => c.name)]
 if (bad.length || collections.length !== 80) throw new Error(`Unvollständig (${collections.length}/80 Trainings): ${bad.join(', ')}`)
-collections.push({ id: 'iihf-c-all', name: 'IIHF Learn to Play (alle)', drillIds: drills.map((d) => d.id) })
 mkdirSync(new URL('../private/', import.meta.url), { recursive: true })
-writeFileSync(new URL('../private/iihf.json', import.meta.url), JSON.stringify({ version: 1, drills, collections, sessions: [] }, null, 2))
-console.log(`${drills.length} Übungen (${drills.filter((d) => d.image).length} mit Bild), ${collections.length} Sammlungen → private/iihf.json`)
+writeFileSync(new URL('../private/iihf.json', import.meta.url), JSON.stringify({ version: 1, drills, collections: oneCollection(drills, collections, 'iihf-c-all', 'IIHF Learn to Play'), sessions: [] }, null, 2))
+console.log(`${drills.length} Übungen (${drills.filter((d) => d.image).length} mit Bild) → private/iihf.json`)

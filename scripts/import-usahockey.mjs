@@ -15,7 +15,7 @@ import { join } from 'node:path'
 const CACHE = join(tmpdir(), 'usah-cache')
 const TMP = mkdtempSync(join(tmpdir(), 'usah-'))
 mkdirSync(CACHE, { recursive: true })
-const sh = (cmd, args, encoding = 'utf8') => execFileSync(cmd, args.map(String), { encoding, maxBuffer: 1 << 28 })
+const sh = (cmd, args, encoding = 'utf8') => execFileSync(cmd, args.map(String), { encoding, maxBuffer: 1 << 28, stdio: ['ignore', 'pipe', 'pipe'] }) // stderr: poppler's "no word list" noise
 const sha = (s) => createHash('sha1').update(s).digest('hex')
 
 // ---------- network: at most one request per second, documents cached ----------
@@ -49,7 +49,7 @@ const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', 
 const LIGATURES = { 'ﬀ': 'ff', 'ﬁ': 'fi', 'ﬂ': 'fl', 'ﬃ': 'ffi', 'ﬄ': 'ffl' }
 const clean = (s) => s
   .replace(/&(#x?[0-9a-f]+|\w+);/gi, (m, e) => (e[0] === '#' ? String.fromCodePoint(e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : Number(e.slice(1))) : ENTITIES[e] ?? m))
-  .replace(/[ﬀ-ﬄ]/g, (c) => LIGATURES[c]).replace(/[ \t ​]+/g, ' ').replace(/ *\n */g, '\n').trim()
+  .replace(/[ﬀ-ﬄ]/g, (c) => LIGATURES[c]).replace(/[ \t ​]+/g, ' ').replace(/\r/g, '').replace(/ *\n */g, '\n').trim()
 const text = (html) => clean(html.replace(/<br\s*\/?>/g, '\n').replace(/<[^>]+>/g, ''))
 const slug = (s) => s.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40)
 const cap = (s) => s[0] + s.slice(1).toLowerCase()
@@ -68,16 +68,15 @@ const RULES = [
 ]
 const classify = (title) => RULES.filter(([, ok]) => ok(title)).map(([id]) => id)
 
-// ---------- drills and collections ----------
+// ---------- drills (one collection for the whole source; plan, age group etc. go into the context line) ----------
 const drills = new Map() // identical drills (same title, text and key points) from several sources are stored once
-const collections = []
 const counts = {}
 function add(src, d) {
   const key = [d.title, ...d.paras, ...(d.keyPoints ?? [])].join('\n').toLowerCase().replace(/\W+/g, ' ')
   const id = `usah-${slug(d.title)}-${sha(key).slice(0, 6)}`
   counts[src] = (counts[src] ?? 0) + 1
   if (drills.has(id)) return id
-  const categories = d.goalie ? [] : classify(d.title)
+  const categories = d.goalie ? ['EF10'] : classify(d.title) // hints only, a classifier sets the final categories
   const description = [...d.paras, d.context, `Quelle: USA Hockey (${d.source})`].filter(Boolean).join('\n\n')
   drills.set(id, {
     id, title: d.title, description, keyPoints: d.keyPoints ?? [], categories, ...(categories[0] && { primary: categories[0] }), elements: [],
@@ -86,14 +85,6 @@ function add(src, d) {
     source: d.source, ...(d.image && { image: d.image }), updatedAt: d.updatedAt,
   })
   return id
-}
-// The same plan can be published twice (practice plan PDF and practice planner): keep one collection.
-function collect(name, drillIds, description) {
-  const ids = [...new Set(drillIds)]
-  if (!ids.length || collections.some((c) => c.drillIds.join() === ids.join())) return
-  let id = `usah-c-${slug(name)}`
-  while (collections.some((c) => c.id === id)) id += '-2'
-  collections.push({ id, name: `USA Hockey: ${name}`, ...(description && { description }), drillIds: ids })
 }
 
 // ---------- PDF layout: words → lines, diagrams, crops ----------
@@ -109,7 +100,7 @@ function pdf(path) {
 function lines(pg, colX) {
   const rows = []
   for (const w of [...pg.words].sort((a, b) => b.h - a.h)) {
-    const r = rows.find((r) => Math.abs(r.y1 - w.y1) < 2.5 || (w.h < 0.85 * r.h && w.y0 >= r.y0 - 2 && w.y1 <= r.y1 + 1))
+    const r = rows.find((r) => Math.abs(r.y1 - w.y1) < 2.5 || (w.h < 8 && w.h < 0.85 * r.h && r.h < 14 && w.y0 >= r.y0 - 2 && w.y1 <= r.y1 + 1))
     if (r) r.ws.push(w)
     else rows.push({ y0: w.y0, y1: w.y1, h: w.h, ws: [w] })
   }
@@ -167,13 +158,21 @@ function figures(pg) {
       if (y > y1) y1 = y
       for (const k of [x > 0 && j - 1, x < w - 1 && j + 1, y > 0 && j - w, y < h - 1 && j + w]) if (k !== false && near[k] && !seen[k]) { seen[k] = 1; stack.push(k) }
     }
-    // split at runs of >= 3 blank rows
+    // split at runs of >= 2 blank rows, but keep pieces under 30 pt with their neighbour (a skater's stick, a label)
     let start = -1, blank = 0
+    const parts = []
     const rowDark = (y) => { for (let x = x0; x <= x1; x++) if (dark[y * w + x]) return true; return false }
     for (let y = y0; y <= y1 + 3; y++) {
       const d = y <= y1 && rowDark(y)
-      if (d) { if (start < 0) start = y; blank = 0 } else if (start >= 0 && ++blank >= 3) { boxes.push([x0, start, x1, y - blank]); start = -1 }
+      if (d) { if (start < 0) start = y; blank = 0 } else if (start >= 0 && ++blank >= 2) { parts.push([start, y - blank]); start = -1 }
     }
+    const merged = []
+    for (const p of parts) {
+      const prev = merged.at(-1)
+      if (prev && (p[1] - p[0] < 30 * sy || prev[1] - prev[0] < 30 * sy)) prev[1] = p[1]
+      else merged.push(p)
+    }
+    for (const [a, b] of merged) boxes.push([x0, a, x1, b])
   }
   const figs = []
   for (const [bx0, by0, bx1, by1] of boxes) {
@@ -181,9 +180,9 @@ function figures(pg) {
     for (let y = by0; y <= by1; y++) for (let x = bx0; x <= bx1; x++) if (dark[y * w + x]) { n++; x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y) }
     const f = { x0: x0 / sx, y0: y0 / sy, x1: (x1 + 1) / sx, y1: (y1 + 1) / sy }
     const area = (f.x1 - f.x0) * (f.y1 - f.y0)
-    const words = pg.words.filter((o) => (o.x0 + o.x1) / 2 > f.x0 && (o.x0 + o.x1) / 2 < f.x1 && (o.y0 + o.y1) / 2 > f.y0 && (o.y0 + o.y1) / 2 < f.y1)
+    const words = pg.words.filter((o) => o.h >= 7 && (o.x0 + o.x1) / 2 > f.x0 && (o.x0 + o.x1) / 2 < f.x1 && (o.y0 + o.y1) / 2 > f.y0 && (o.y0 + o.y1) / 2 < f.y1)
     const textArea = words.reduce((s, o) => s + (o.x1 - o.x0) * (o.y1 - o.y0), 0)
-    if (f.x1 - f.x0 >= 40 && f.y1 - f.y0 >= 30 && n / ((x1 - x0 + 1) * (y1 - y0 + 1)) >= 0.08 && textArea / area < 0.15 && area < 0.6 * pg.W * pg.H) figs.push(f)
+    if (((f.x1 - f.x0 >= 40 && f.y1 - f.y0 >= 30) || (f.x1 - f.x0 >= 18 && f.y1 - f.y0 >= 35)) && n / ((x1 - x0 + 1) * (y1 - y0 + 1)) >= 0.08 && textArea / area < 0.15 && area < 0.6 * pg.W * pg.H) figs.push(f)
   }
   figCache.set(key, figs)
   return figs
@@ -247,14 +246,14 @@ const SECTION = /^(WARMUP|WARM-UP|STATIONS?|SKILL DRILLS|DRILLS|GAMES?|COACHING 
 const MINUTES = /^(.+?)\s*\((\d+)\s*minutes?\)$/
 const GOALIES = /^Goalies?:\s*(\S+(?: \S+){0,5}?)(?:\s*\((\d+)\s*minutes?\))?$/
 const FOOTER = /Practice Planner \|? ?\d*$|^\d+ \| USA Hockey/
-function planPage(pg, file, suffix) {
+function planPage(pg, file) {
   const colX = pg.W * 0.48
   const figs = figures(pg)
   const ls = lines(pg, colX).filter((l) => l.h >= 6.5 && !inside(l, figs) && !FOOTER.test(l.t))
   const title = ls.find((l) => l.h >= 18).t
-  const top = Math.min(...ls.filter((l) => SECTION.test(l.t)).map((l) => l.y0))
+  const top = Math.min(...ls.filter((l) => SECTION.test(l.t) || MINUTES.test(l.t)).map((l) => l.y0)) // some plans have no section headings
   const header = ls.filter((l) => l.y0 < top && l.h < 18).sort((a, b) => a.y0 - b.y0 || a.x0 - b.x0).map((l) => l.t)
-  const ds = [], heads = [], notes = []
+  const ds = [], heads = []
   let sec = '', cur = null
   for (const l of ls.filter((l) => l.y0 >= top)) {
     let m
@@ -262,24 +261,26 @@ function planPage(pg, file, suffix) {
       sec = cap(m[1])
       cur = null
       heads.push(l)
-      if (m[2]) notes.push(`${sec}: ${m[2]}`)
+      const min = m[2].match(/^\((\d+)\s*minutes?\)$/)
+      if (min) ds.push(cur = { title: `${sec} (${title})`, minutes: +min[1], sec, col: l.col, y0: l.y0, lines: [] }) // unnamed warmup
+    } else if (/^Goalies?$/.test(l.t)) { // unnamed goalie drill
+      ds.push(cur = { title: `Goalies (${title})`, sec, goalie: true, col: l.col, y0: l.y0, lines: [] })
+      heads.push(l)
     } else if ((m = MINUTES.exec(l.t) ?? GOALIES.exec(l.t))) {
       const goalie = /^Goalies?:/.test(l.t)
       const name = m[1].replace(/^Goalies?:\s*/, '')
       const prefix = name.match(/^(Station \d+|Drill \d+|Game \d+)\s*[:–-]\s*/)?.[0]
       ds.push(cur = { title: name.slice(prefix?.length ?? 0), prefix: goalie ? 'Goalies' : prefix?.replace(/\s*[:–-]\s*$/, ''), minutes: +m[2] || undefined, sec, goalie, col: l.col, y0: l.y0, lines: [] })
       heads.push(l)
-    } else if (cur) cur.lines.push(l)
-    else notes.push(`${sec}: ${l.t}`)
+    } else if (cur) cur.lines.push(l) // section intros (rotation notes) are skipped
   }
   ranges(ds, heads, pg)
-  const ids = ds.map((d) => add('plan', {
+  ds.forEach((d) => add('plan', {
     title: d.title, paras: paras(d.lines), minutes: d.minutes, goalie: d.goalie,
-    context: [title, d.sec, d.prefix].filter(Boolean).join(' · '),
+    context: `${[title, d.sec, d.prefix].filter(Boolean).join(' · ')}\n${header.join(' · ')}`,
     source: `${file.url}#page=${pg.n}`, image: crop(pg, pick(d, figs, colX)), updatedAt: file.date,
   }))
   if (ds.length < 3 || ds.some((d) => !d.lines.length)) throw new Error(`${file.url} S. ${pg.n}: Plan nicht erkannt`)
-  collect(`${title}${suffix}`, ids, [...header, ...notes].join('\n'))
 }
 
 // ---------- 12U advanced one-page plans: "Name (min/total)" headings, "Station 1: Name – text" sub-drills ----------
@@ -321,20 +322,17 @@ function advancedPage(pg, file) {
   }
   const ids = ds.filter((d) => d.lines.length || !d.subs?.length).map((d) => add('advanced', {
     title: d.title, paras: paras(d.lines), minutes: d.minutes, goalie: d.goalie,
-    context: [title, d.parent?.title, d.prefix].filter(Boolean).join(' · '),
+    context: `${[title, d.parent?.title, d.prefix].filter(Boolean).join(' · ')}\n${header.replace(/^12U Advanced:.*?\s+(?=Number of)/, '')}`,
     source: `${file.url}#page=${pg.n}`, image: crop(pg, pick(d, figs, colX)), updatedAt: file.date,
   }))
   if (ids.length < 3) throw new Error(`${file.url}: Plan nicht erkannt`)
-  collect(title, ids, header.replace(/^12U Advanced:.*?\s+(?=Number of)/, ''))
 }
 
 // ---------- goalie season plans: "1) Name … 5 min.", objective/organization right, key points + photo left ----------
 function goaliePlan(file, name) {
-  const ids = []
-  let intro = ''
+  let n = 0
   for (const pg of pdf(file.path)) {
     const ls = lines(pg, 200)
-    if (pg.n === 1) intro = ls.filter((l) => l.col === 1 && l.y0 < 60).map((l) => l.t).join(' ')
     const heads = ls.filter((l) => l.col === 0 && /^\d+\)\s/.test(l.t) && l.x0 < 40)
     const list = sh('pdfimages', ['-list', '-f', pg.n, '-l', pg.n, pg.path]).split('\n').slice(2).map((r) => r.trim().split(/\s+/)).filter((r) => r.length > 4)
     const photos = list.map((r, i) => ({ i, w: +r[3], enc: r[8] })).filter((p) => p.w < 1000)
@@ -361,16 +359,15 @@ function goaliePlan(file, name) {
       }
       const ps = parts.filter((p) => p.t.length).map((p) => `${p.label}: ${p.t.join(' ')}`)
       const minutes = +ls.find((l) => l.col === 1 && Math.abs(l.y0 - h.y0) < 3 && /^\d+ min\.$/.test(l.t))?.t.match(/\d+/)[0] || undefined
-      ids.push(add('goalie plans', {
+      n++
+      add('goalie plans', {
         title: h.t.replace(/^\d+\)\s*/, ''), paras: ps, keyPoints, minutes, goalie: true,
         context: `${name} · Drill ${h.t.match(/^\d+/)[0]}`, source: `${file.url}#page=${pg.n}`,
         image: files[k] && files[k].length < 80000 ? `data:image/jpeg;base64,${files[k].toString('base64')}` : undefined, updatedAt: file.date,
-      }))
+      })
     })
   }
-  if (ids.length < 10) throw new Error(`${file.url}: Torhüterplan nicht erkannt`)
-  collect(`Goalies – ${name}`, ids, intro)
-  return ids
+  if (n < 10) throw new Error(`${file.url}: Torhüterplan nicht erkannt`)
 }
 
 // ---------- goalie drill library: one NTDP drill per PDF (diagram bottom right) or .doc (text only) ----------
@@ -409,7 +406,6 @@ function goalieDrill(file, title, group) {
 
 // ---------- small-area games manual: two games per page, title (16 pt), text, NOTES/COMMENTS ----------
 function sagManual(file) {
-  const groups = new Map()
   let age = ''
   for (const pg of pdf(file.path)) {
     const figs = figures(pg)
@@ -418,7 +414,8 @@ function sagManual(file) {
     if (big) age = big.t
     age = ls.find((l) => /^[\d\-, ]+and-Under \| \d+$/.test(l.t))?.t.replace(/ \|.*/, '') ?? age
     const titles = []
-    for (const l of ls.filter((l) => l.h >= 15.5 && l.h < 20).sort((a, b) => a.y0 - b.y0)) {
+    if (!age) continue // front matter
+    for (const l of ls.filter((l) => l.h >= 15.5 && l.h < 20 && !/USA Hockey Small Area|^\d+$|^\|$|^[ivx]+$|^(Preface|Goaltenders|My Drill:)$/.test(l.t)).sort((a, b) => a.y0 - b.y0)) {
       const prev = titles.at(-1)
       if (prev && l.y0 - prev.y1 < 8) { prev.t += ' ' + l.t; prev.y1 = l.y1 } else titles.push({ ...l })
     }
@@ -433,19 +430,16 @@ function sagManual(file) {
       const hi = titles[k + 1] ? (Math.max(t.y1, ...own.map((l) => l.y1)) + titles[k + 1].y0) / 2 : pg.H
       const box = union(figs.filter((f) => (f.y0 + f.y1) / 2 > lo && (f.y0 + f.y1) / 2 < hi))
       lo = hi
-      const id = add('small-area games', {
+      add('small-area games', {
         title: t.t, paras: [...paras(main), comments && `Notes/Comments: ${comments}`].filter(Boolean),
         context: `Small Area Competitive Games · ${age}`, source: `${file.url}#page=${pg.n}`, image: crop(pg, box), updatedAt: file.date,
       })
-      groups.set(age, [...(groups.get(age) ?? []), id])
     })
   }
-  for (const [g, ids] of groups) collect(`Small-Area Games – ${g}`, ids)
 }
 
 // ---------- Teaching Concepts Through Small-Area Games: one game per page, grouped by concept ----------
 function teachingConcepts(file) {
-  const groups = new Map()
   for (const pg of pdf(file.path)) {
     const ls = lines(pg, pg.W * 0.48).sort((a, b) => a.y0 - b.y0 || a.x0 - b.x0)
     const ci = ls.findIndex((l) => l.t === 'CONCEPTS')
@@ -455,19 +449,16 @@ function teachingConcepts(file) {
     const tags = ls.slice(ci + 1).filter((l) => l.h > 14 && l.h < 16).map((l) => l.t).join(' ')
     const body = ls.slice(ci + 1).filter((l) => l.h > 11 && l.h < 14 && !/Teaching Concepts Through/.test(l.t))
     const bottom = Math.max(...body.map((l) => l.y1))
-    const id = add('teaching concepts', {
+    add('teaching concepts', {
       title, paras: [`Concepts: ${tags}`, ...paras(body)], context: `Teaching Concepts Through Small-Area Games · ${concept}`,
       source: `${file.url}#page=${pg.n}`, image: crop(pg, union(figures(pg).filter((f) => f.y0 > bottom))), updatedAt: file.date,
     })
-    groups.set(concept, [...(groups.get(concept) ?? []), id])
   }
-  for (const [g, ids] of groups) collect(`Teaching Concepts – ${g}`, ids)
 }
 
 // ---------- HTML articles ----------
 // ADM Drill of the Month: <p><strong>Purpose:</strong> …</p>; "Coaching Points" become key points, "Equipment" the material.
 async function adm() {
-  const ids = [], byAge = new Map()
   for (let n = 1; ; n++) {
     const list = await page(`https://www.admkids.com/page/show/915539?match_option=0&news_aggregator=1146622&tags=2284974&page=${n}`)
     for (const [, art] of list.matchAll(/<h4>\s*<a href="\/news_article\/show\/(\d+)/g)) {
@@ -490,21 +481,13 @@ async function adm() {
       }
       const age = head.match(/^(\d+U\+?(?:\s*[-/,]\s*\d+U?\+?)*)\s*:?\s+/)
       const image = body.match(/heroPhotoElement">\s*(?:<a[^>]*>\s*)?<img[^>]*src="(https:[^"]+)"/)?.[1]
-      const id = add('adm', {
+      add('adm', {
         title: age ? head.slice(age[0].length) : head, paras: desc, keyPoints, material, context: `ADM Drill of the Month${age ? ' · ' + age[1] : ''}`,
         source: url, image, updatedAt: usDate(html.match(/class="newsDate">([^<]+)</)[1]),
       })
-      ids.push(id)
-      if (age) {
-        const nums = age[1].match(/\d+/g).map(Number)
-        const span = age[1].includes('+') ? [nums[0], 18] : age[1].includes('-') ? [nums[0], nums.at(-1)] : null
-        for (const a of [6, 8, 10, 12, 14, 16, 18].filter((a) => (span ? a >= span[0] && a <= span[1] : nums.includes(a)))) byAge.set(a, [...(byAge.get(a) ?? []), id])
-      }
     }
     if (!/class="next_page" rel="next"/.test(list)) break
   }
-  collect('ADM Drill of the Month', ids)
-  for (const a of [...byAge.keys()].sort((x, y) => x - y)) collect(`ADM Drill of the Month – ${a}U`, byAge.get(a))
 }
 
 // Player development camp practice plans: one <h3> per drill with key teaching points, progression, goalie notes.
@@ -517,7 +500,6 @@ async function camps() {
     const name = text(html.match(/<h2 class="titleText">([\s\S]*?)<\/h2>/)[1])
     const date = usDate(html.match(/class="newsDate">([^<]+)</)[1])
     const body = html.slice(html.indexOf('<div class="newsContentNode'), html.indexOf('<p class="newsTags'))
-    const ids = []
     let details = ''
     for (const chunk of body.split(/<h3[^>]*>/).slice(1)) {
       const title = text(chunk.slice(0, chunk.indexOf('</h3>')))
@@ -535,9 +517,8 @@ async function camps() {
         } else desc.push(t)
       }
       const image = [...chunk.matchAll(/<img[^>]*src="(https:[^"]+)"/g)].map((m) => m[1]).find((s) => !/App_Store|get_it_on_play/.test(s))
-      ids.push(add('camp plans', { title, paras: desc, keyPoints, minutes, context: name, source: url, image, updatedAt: date }))
+      add('camp plans', { title, paras: desc, keyPoints, minutes, context: `${name}\n${details.replace(/\n/g, ' · ')}`, source: url, image, updatedAt: date })
     }
-    collect(name, ids, details)
   }
 }
 
@@ -563,7 +544,7 @@ async function plans() {
     for (const pg of pdf(file.path)) {
       const first = lines(pg, pg.W * 0.48).sort((a, b) => a.y0 - b.y0)[0]
       if (/^12U Advanced:/.test(first?.t ?? '')) advancedPage(pg, file)
-      else if (first?.h >= 18 && /^\d+U .*Practice Plan \d+/.test(first.t)) planPage(pg, file, l.group === 'Practice Planner' ? ' (Practice Planner)' : '')
+      else if (first?.h >= 18 && /^\d+U .*Practice Plan \d+/.test(first.t)) planPage(pg, file)
     }
   }
 }
@@ -576,9 +557,7 @@ async function goalies() {
   for (const [id, group] of Object.entries(LIB)) {
     const links = pdfLinks(await page(`https://www.usahockeygoaltending.com/page/show/${id}`))
     if (!links.length) throw new Error(`Torhüter-Seite ${id}: keine Übungen`)
-    const ids = []
-    for (const l of links) ids.push(goalieDrill(await download(l.url), l.name, group))
-    collect(`Goalie Drills – ${group}`, ids)
+    for (const l of links) goalieDrill(await download(l.url), l.name, group)
   }
 }
 
@@ -607,7 +586,7 @@ if (bad.length) throw new Error(`Unvollständig oder HTML-Reste: ${bad.map((d) =
 const MIN = { adm: 30, 'camp plans': 15, plan: 300, advanced: 25, 'goalie plans': 80, 'goalie drills': 50, 'small-area games': 50, 'teaching concepts': 30 }
 const short = Object.entries(MIN).filter(([k, n]) => (counts[k] ?? 0) < n)
 if (short.length) throw new Error(`Zu wenige Übungen (Seitenstruktur geändert?): ${short.map(([k]) => `${k} ${counts[k] ?? 0}`).join(', ')}`)
-collections.unshift({ id: 'usah-c-all', name: 'USA Hockey (alle)', drillIds: all.map((d) => d.id) })
+const collections = [{ id: 'usah-c-all', name: 'USA Hockey', drillIds: all.map((d) => d.id) }]
 mkdirSync(new URL('../private/', import.meta.url), { recursive: true })
 const out = JSON.stringify({ version: 1, drills: all, collections, sessions: [] }, null, 2)
 writeFileSync(new URL('../private/usahockey.json', import.meta.url), out)

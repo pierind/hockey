@@ -2,6 +2,7 @@
 // Private use only: the output goes to private/ (gitignored) and must never be committed, this repo is public.
 // Usage: node scripts/import-mobilesport.mjs   → private/mobilesport.json
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { oneCollection } from './one-collection.mjs'
 
 const API = 'https://www.mobilesport.ch/wp-json/wp/v2/posts?sp=87&per_page=100' // sp 87 = Eishockey, 81 posts (2026-10)
 // Articles, overviews and PDF-only lessons: no drill to extract.
@@ -66,7 +67,7 @@ function trainingsformen(post, group, ef) {
       tips = items(rest.match(/Expertentipp<\/h3>\s*<ul[^>]*>([\s\S]*?)<\/ul>/)?.[1] ?? '')
     }
   })
-  return { drills, collection: { id: `ms-c-${post.id}`, name: `mobilesport: ${group} – ${ef}`, drillIds: drills.map((d) => d.id) } }
+  return drills
 }
 
 // Single drill posts: lead (h5), diagram, paragraphs, variation, «Bemerkungen» or «Keypoints».
@@ -88,20 +89,14 @@ const res = await fetch(API)
 if (!res.ok) throw new Error(`mobilesport.ch: HTTP ${res.status}`)
 const posts = await res.json()
 const drills = []
-const collections = []
 for (const post of posts) {
   const title = text(post.title.rendered)
   if (!post.link.includes('/eishockey/') || SKIP.test(title)) continue
   const tf = title.match(/^Eishockey (Kinder|Jugendliche) – Trainingsformen zu den Erscheinungsformen: (.+)$/)
-  if (tf) {
-    const r = trainingsformen(post, tf[1], tf[2])
-    drills.push(...r.drills)
-    collections.push(r.collection)
-  } else drills.push(single(post))
+  drills.push(...(tf ? trainingsformen(post, tf[1], tf[2]) : [single(post)]))
 }
 const bad = drills.filter((d) => !d.title || !d.description)
 if (bad.length) throw new Error(`Unvollständig: ${bad.map((d) => d.id).join(', ')}`)
-collections.unshift({ id: 'ms-c-all', name: 'mobilesport.ch (alle)', drillIds: drills.map((d) => d.id) })
 mkdirSync(new URL('../private/', import.meta.url), { recursive: true })
-writeFileSync(new URL('../private/mobilesport.json', import.meta.url), JSON.stringify({ version: 1, drills, collections, sessions: [] }, null, 2))
-console.log(`${drills.length} Übungen, ${collections.length} Sammlungen → private/mobilesport.json`)
+writeFileSync(new URL('../private/mobilesport.json', import.meta.url), JSON.stringify({ version: 1, drills, collections: oneCollection(drills, [], 'ms-c-all', 'mobilesport.ch'), sessions: [] }, null, 2))
+console.log(`${drills.length} Übungen → private/mobilesport.json`)

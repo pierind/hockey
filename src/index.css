@@ -93,6 +93,12 @@ main > .status { background: var(--surface); border-left: 3px solid var(--accent
 .drill-image { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
 .thumb .drill-image { border: 0; border-radius: 0; aspect-ratio: 62 / 32; object-fit: contain; }
 .original { display: grid; gap: 4px; font-size: 0.85rem; }
+.picker { position: relative; }
+.picker-list { position: absolute; z-index: 5; left: 0; min-width: 100%; width: max-content; max-width: min(480px, 90vw); max-height: 320px; overflow: auto; margin: 2px 0 0; padding: 4px; list-style: none; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); }
+.picker-list button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 6px 8px; white-space: normal; }
+.picker-list button:hover, .picker-list button:focus-visible { background: #f7fafc; }
+.picker-list small { color: var(--muted); }
+.picker-list .hint { padding: 6px 8px; }
 details.card { padding: 0; margin-bottom: 10px; }
 details.card summary { cursor: pointer; font-weight: 600; padding: 10px 14px; list-style-position: inside; border-radius: var(--radius); }
 details.card summary:hover { background: #f7fafc; }

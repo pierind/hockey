@@ -6,6 +6,7 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { oneCollection } from './one-collection.mjs'
 
 const SITE = 'https://video.hockeycanada.ca'
 const HUB = `${SITE}/en-ca/hockey-programs/drill-hub`
@@ -197,8 +198,7 @@ rmSync(tmp, { recursive: true, force: true })
 
 const bad = drills.filter((d) => !d.title || /^(Kategorie|Alter|Video|Quelle|U\d Practice)/.test(d.description))
 if (bad.length) throw new Error(`Unvollständig: ${bad.map((d) => d.id).join(', ')}`)
-collections.unshift({ id: 'hc-c-all', name: 'Hockey Canada (alle)', drillIds: drills.map((d) => d.id) })
 mkdirSync(new URL('../private/', import.meta.url), { recursive: true })
-const out = JSON.stringify({ version: 1, drills, collections, sessions: [] }, null, 2)
+const out = JSON.stringify({ version: 1, drills, collections: oneCollection(drills, collections, 'hc-c-all', 'Hockey Canada'), sessions: [] }, null, 2)
 writeFileSync(new URL('../private/hockeycanada.json', import.meta.url), out)
-console.log(`${drills.length} Übungen, ${collections.length} Sammlungen, ${(out.length / 1e6).toFixed(1)} MB → private/hockeycanada.json`)
+console.log(`${drills.length} Übungen, ${(out.length / 1e6).toFixed(1)} MB → private/hockeycanada.json`)

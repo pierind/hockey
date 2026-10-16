@@ -21,6 +21,7 @@ const HELP = {
     title: 'Übungen (Bibliothek)',
     body: (
       <ul>
+        <li>Es werden 60 Übungen aufs Mal gezeigt; «Mehr anzeigen» oder «Alle anzeigen» blendet weitere ein. Suche und Filter durchsuchen immer alle Übungen.</li>
         <li><b>Neue Übung</b> öffnet den Zeichen-Editor. Fertig ist eine Übung mit Titel, Beschreibung, mindestens einem Coaching-Punkt und einer Erscheinungsform; sonst kann sie als <b>Entwurf</b> gespeichert werden.</li>
         <li>Die Suche durchsucht Titel, Beschreibung und Coaching-Punkte. Filter: Erscheinungsform, dann Schlüsselelement (die Liste zeigt nur die Elemente der gewählten Erscheinungsform), und Ort (Eis / Off-Ice).</li>
         <li><b>Duplizieren</b> erstellt eine Variante; das Original bleibt unverändert.</li>
@@ -47,6 +48,7 @@ const HELP = {
     title: 'Sammlungen',
     body: (
       <ul>
+        <li>Sammlungen sind zugeklappt; ein Klick auf den Namen öffnet sie. Neue, leere Sammlungen sind offen.</li>
         <li><b>Nach Erscheinungsform</b>: automatisch. Eine Übung erscheint dort, sobald sie die Erscheinungsform hat.</li>
         <li><b>Eigene Sammlungen</b>: frei benennen und Übungen von Hand hinzufügen. Eine Übung kann in mehreren Sammlungen sein, ohne kopiert zu werden.</li>
         <li>Eine ganze Sammlung kann in ein Training übernommen werden.</li>
@@ -60,6 +62,7 @@ const HELP = {
         <li>Trainings sind nach Monat geordnet; vergangene Monate sind zugeklappt. Die Suche durchsucht Titel, Notizen und die enthaltenen Übungen; Filter nach Erscheinungsform und Schlüsselelement.</li>
         <li>Status: <span className="status-badge draft">✎ Entwurf</span> = geplant, noch offen; <span className="status-badge final">✓ Definitiv</span> = festgelegt; <span className="status-badge template">▤ Vorlage</span> = Vorlage. Umschalten im Training.</li>
         <li><b>Vorlagen</b>: ein Training mit «Vorlage» markieren (z. B. typischer Ablauf Einwärmen → Posten → Spielform). Vorlagen stehen oben in eigenem Ordner und zählen nicht in der Auswertung. «Neues Training aus…» erstellt aus einer Vorlage oder einem früheren Training ein neues Training ohne Datum, als Entwurf. Mit «Ersetzen durch…» lässt sich pro Eintrag eine andere Übung einsetzen; Dauer und Notizen bleiben.</li>
+        <li><b>Übung hinzufügen…</b> und <b>Ersetzen durch…</b> sind Suchfelder: ein paar Buchstaben tippen, dann einen Treffer anklicken oder mit Enter den ersten übernehmen. Treffer im Titel stehen zuoberst; daneben stehen Dauer und Quelle, um gleichnamige Übungen zu unterscheiden.</li>
         <li><b>Start</b> (Uhrzeit) eintragen: jeder Eintrag zeigt dann seine Zeit, z. B. 17:07–17:47, auch auf dem Trainingsblatt.</li>
         <li><b>Posten-Block</b>: «Parallel (Posten)» bei einem Eintrag setzen, er gehört dann zum selben Block wie der vorherige. Die Gruppen rotieren durch alle Posten, darum zählt jeder Posten mit seiner vollen Dauer: 3 Posten à 12 Min. = 36 Min., also die Zeit, die jede Spielerin und jeder Spieler an jeder Übung verbringt. Auf dem Trainingsblatt stehen die Posten nebeneinander.</li>
         <li><b>Wechselzeit</b>: zwischen zwei Übungen bzw. Blöcken werden automatisch 2 Min. eingerechnet (in Zeiten und Total). Der Wechsel zwischen den Posten innerhalb eines Blocks zählt nicht extra.</li>

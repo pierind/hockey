@@ -52,15 +52,18 @@ test('coach workflow', async ({ page }) => {
   await page.getByRole('button', { name: 'Sammlungen' }).click()
   await page.getByLabel('Name der neuen Sammlung').fill('Passen')
   await page.getByRole('button', { name: 'Sammlung erstellen' }).click()
-  await page.getByLabel('Übung zu Passen hinzufügen').selectOption({ label: 'Give and Go Test' })
+  await page.getByLabel('Übung zu Passen hinzufügen').fill('give and go')
+  await page.locator('.picker-list button', { hasText: 'Give and Go Test' }).click()
   await expect(page.getByRole('button', { name: 'Give and Go Test' })).toBeVisible()
 
   // Training with start time; the same drill twice, first in a row (2 min changeover), then as a Posten-Block
   await page.getByRole('button', { name: 'Trainings' }).click()
   await page.getByRole('button', { name: 'Neues Training' }).click()
   await page.getByLabel('Start').fill('17:00')
-  await page.getByLabel('Übung aus der Bibliothek hinzufügen').selectOption({ label: 'Give and Go Test' })
-  await page.getByLabel('Übung aus der Bibliothek hinzufügen').selectOption({ label: 'Give and Go Test' })
+  await page.getByLabel('Übung aus der Bibliothek hinzufügen').fill('Give and Go')
+  await page.locator('.picker-list button', { hasText: 'Give and Go Test' }).click()
+  await page.getByLabel('Übung aus der Bibliothek hinzufügen').fill('Give and Go')
+  await page.getByLabel('Übung aus der Bibliothek hinzufügen').press('Enter') // Enter picks the first match
   await expect(page.getByText('Total: 26 Min. · 17:00–17:26')).toBeVisible()
   await page.getByLabel('Parallel (Posten)').check()
   await expect(page.getByText('Total: 24 Min. · 17:00–17:24')).toBeVisible()
