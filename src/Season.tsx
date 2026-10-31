@@ -121,7 +121,7 @@ export function Season({ db, change }: { db: Db; change: Change }) {
                               onRemove={(id) => updWeek(w.id, (w) => ({ ...w, trainings: w.trainings.map((x, j) => (j === n ? x.filter((g) => g !== id) : x)) }))} />
                             <Pick label={`Schlüsselelement Training ${n + 1}`} onPick={(id) => updWeek(w.id, (w) => ({ ...w, trainings: w.trainings.map((x, j) => (j === n ? [...x, id] : x)) }))} />
                             {w.monday && <button onClick={() => newSession(w, n)}>Training anlegen</button>}
-                            <button aria-label={`Training ${n + 1} aus dem Plan entfernen`} onClick={() => updWeek(w.id, (w) => ({ ...w, trainings: w.trainings.filter((_, j) => j !== n) }))}>Entfernen</button>
+                            <button aria-label={`Training ${n + 1} aus dem Plan entfernen`} className="ghost danger" onClick={() => updWeek(w.id, (w) => ({ ...w, trainings: w.trainings.filter((_, j) => j !== n) }))}>Entfernen</button>
                           </li>
                         ))}
                       </ol>

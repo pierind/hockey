@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Thumb } from './Diagram'
-import { deleteDrill, duplicateDrill, filterDrills, newDrill } from './model'
+import { deleteDrill, duplicateDrill, filterDrills, newDrill, rankDrills } from './model'
 import type { Change } from './model'
 import { HelpButton } from './Help'
 import { categories, categoryLabel, elements } from './sihf'
+import { AGE_CLASSES } from './types'
 import type { Db, Drill } from './types'
 
 // Until a diagram is drawn: the imported original image, or a placeholder for off-ice drills, instead of an empty rink.
@@ -24,7 +25,12 @@ export function DrillSummary({ drill }: { drill: Drill }) {
         )}
         {drill.description && <p className="pre">{drill.description}</p>}
         {drill.keyPoints.length > 0 && <ul>{drill.keyPoints.map((k, i) => <li key={i}>{k}</li>)}</ul>}
-        {drill.source && <p className="hint"><a href={drill.source} target="_blank" rel="noreferrer">Quelle: {new URL(drill.source).hostname}</a></p>}
+        {(drill.author || drill.source) && (
+          <p className="hint">
+            {drill.author && `Autor/in: ${drill.author}`}{drill.author && drill.source && ' · '}
+            {drill.source && <a href={drill.source} target="_blank" rel="noreferrer">Quelle: {new URL(drill.source).hostname}</a>}
+          </p>
+        )}
       </div>
     </div>
   )
@@ -56,11 +62,90 @@ export function DrillPicker({ drills, label, placeholder = 'Übung suchen…', o
   )
 }
 
+// Finds drills by training goal instead of by name: Erscheinungsform, then optionally a Schlüsselelement, narrowed by age,
+// place or a keyword. keepOpen: stays open after a pick so several drills can be added in one go.
+const SUGGESTIONS = 12
+export function DrillFinder({ drills, title, category: initial = '', inSession = [], pickLabel, keepOpen = false, onPick, onClose }: {
+  drills: Drill[]; title: string; category?: string; inSession?: string[]; pickLabel: string; keepOpen?: boolean; onPick: (d: Drill) => void; onClose: () => void
+}) {
+  const ref = useRef<HTMLDialogElement>(null)
+  useEffect(() => ref.current?.showModal(), [])
+  const [category, setCategory] = useState(initial)
+  const [element, setElement] = useState('')
+  const [age, setAge] = useState('')
+  const [place, setPlace] = useState<'' | 'on' | 'off'>('')
+  const [q, setQ] = useState('')
+  const [shown, setShown] = useState(SUGGESTIONS)
+  const [added, setAdded] = useState(0)
+  const filter = (fn: () => void) => { fn(); setShown(SUGGESTIONS) }
+  const list = rankDrills(filterDrills(drills, q, category, element, place, age), category)
+  return (
+    <dialog ref={ref} className="finder" aria-label={title} onClose={onClose}>
+      <div className="finder-head">
+        <h2>{title}</h2>
+        {added > 0 && <span className="pill">{added} hinzugefügt</span>}
+        <button className={keepOpen ? 'primary' : ''} onClick={() => ref.current?.close()}>{keepOpen ? 'Fertig' : 'Abbrechen'}</button>
+      </div>
+      <p className="step">Was soll trainiert werden?</p>
+      <div className="tiles" role="group" aria-label="Erscheinungsform">
+        {categories.map((c) => (
+          <button key={c.id} aria-pressed={category === c.id} onClick={() => filter(() => { setCategory(category === c.id ? '' : c.id); setElement('') })}>
+            <small>{c.id}</small> {c.label}
+          </button>
+        ))}
+      </div>
+      {category && (
+        <>
+          <p className="step">Schlüsselelement <span className="hint">optional</span></p>
+          <div className="choices" role="group" aria-label="Schlüsselelement">
+            {elements.filter((e) => e.category === category).map((e) => (
+              <button key={e.id} title={e.goal} aria-pressed={element === e.id} onClick={() => filter(() => setElement(element === e.id ? '' : e.id))}><small>{e.id}</small> {e.label}</button>
+            ))}
+          </div>
+        </>
+      )}
+      <div className="row finder-filters">
+        <input type="search" aria-label="Vorschläge nach Stichwort filtern" placeholder="Stichwort…" value={q} onChange={(e) => filter(() => setQ(e.target.value))} />
+        <select aria-label="Altersklasse" value={age} onChange={(e) => filter(() => setAge(e.target.value))}>
+          <option value="">Alle Altersklassen</option>
+          {AGE_CLASSES.map((a) => <option key={a}>{a}</option>)}
+        </select>
+        <select aria-label="Ort" value={place} onChange={(e) => filter(() => setPlace(e.target.value as '' | 'on' | 'off'))}>
+          <option value="">Eis und Off-Ice</option>
+          <option value="on">Auf dem Eis</option>
+          <option value="off">Off-Ice</option>
+        </select>
+        <span className="hint">{list.length} Übungen</span>
+      </div>
+      {list.length ? (
+        <ul className="finder-grid">
+          {list.slice(0, shown).map((d) => (
+            <li key={d.id} className="finder-card">
+              <Picture drill={d} />
+              <h3>{d.title || 'Ohne Titel'} {inSession.includes(d.id) && <span className="badge">im Training</span>}</h3>
+              {/* only the ages: the Erscheinungsform was just chosen, and all of them make the card tall */}
+              <div>{d.ages?.map((a) => <span key={a} className="chip">{a}</span>)}</div>
+              <small className="hint">{[d.minutes && `${d.minutes} Min.`, d.author].filter(Boolean).join(' · ')}</small>
+              <button aria-label={`${pickLabel}: ${d.title || 'Ohne Titel'}`} onClick={() => {
+                onPick(d)
+                if (keepOpen) setAdded((n) => n + 1)
+                else ref.current?.close()
+              }}>{pickLabel}</button>
+            </li>
+          ))}
+        </ul>
+      ) : <p className="empty">Keine Übung passt. Filter lockern oder ein anderes Ziel wählen.</p>}
+      {list.length > shown && <button className="more" onClick={() => setShown((n) => n + SUGGESTIONS)}>Mehr Vorschläge ({list.length - shown})</button>}
+    </dialog>
+  )
+}
+
 export function Chips({ drill }: { drill: Drill }) {
   return (
     <div>
       {drill.categories.map((c) => <span key={c} className={c === drill.primary ? 'chip primary' : 'chip'}>{categoryLabel[c]}</span>)}
       {drill.offIce && <span className="chip">Off-Ice</span>}
+      {drill.ages?.map((a) => <span key={a} className="chip">{a}</span>)}
     </div>
   )
 }
@@ -89,8 +174,9 @@ export function Library({ db, change, onEdit }: { db: Db; change: Change; onEdit
   const [category, setCategory] = useState('')
   const [element, setElement] = useState('')
   const [place, setPlace] = useState<'' | 'on' | 'off'>('')
+  const [age, setAge] = useState('')
   const [shown, setShown] = useState(PAGE)
-  const list = filterDrills(db.drills, q, category, element, place)
+  const list = filterDrills(db.drills, q, category, element, place, age)
   // A new search or filter starts again at the first page.
   const filter = (fn: () => void) => { fn(); setShown(PAGE) }
 
@@ -107,13 +193,17 @@ export function Library({ db, change, onEdit }: { db: Db; change: Change; onEdit
         <HelpButton topic="library" />
         <button className="primary" onClick={() => onEdit(newDrill())}>Neue Übung</button>
       </div>
-      <div className="row">
-        <input type="search" aria-label="Suchen in Titel, Beschreibung und Coaching-Punkten" placeholder="Suchen…" value={q} onChange={(e) => filter(() => setQ(e.target.value))} />
+      <div className="row filters">
+        <input type="search" aria-label="Suchen in Titel, Beschreibung, Coaching-Punkten und Autor/in" placeholder="Suchen…" value={q} onChange={(e) => filter(() => setQ(e.target.value))} />
         <CategoryFilter category={category} element={element} onChange={(c, e) => filter(() => { setCategory(c); setElement(e) })} />
         <select aria-label="Ort" value={place} onChange={(e) => filter(() => setPlace(e.target.value as '' | 'on' | 'off'))}>
           <option value="">Auf dem Eis und Off-Ice</option>
           <option value="on">Auf dem Eis</option>
           <option value="off">Off-Ice</option>
+        </select>
+        <select aria-label="Altersklasse" value={age} onChange={(e) => filter(() => setAge(e.target.value))}>
+          <option value="">Alle Altersklassen</option>
+          {AGE_CLASSES.map((a) => <option key={a}>{a}</option>)}
         </select>
       </div>
       {db.drills.length === 0 ? (
@@ -131,9 +221,9 @@ export function Library({ db, change, onEdit }: { db: Db; change: Change; onEdit
               <h3>{d.title || 'Ohne Titel'} {d.draft && <span className="badge">Entwurf</span>}</h3>
               <Chips drill={d} />
               <div className="row">
-                <button onClick={() => onEdit(d)}>Öffnen</button>
-                <button onClick={() => change((db) => ({ ...db, drills: [...db.drills, duplicateDrill(d)] }))}>Duplizieren</button>
-                <button onClick={() => del(d)}>Löschen</button>
+                <button className="ghost" onClick={() => onEdit(d)}>Öffnen</button>
+                <button className="ghost" onClick={() => change((db) => ({ ...db, drills: [...db.drills, duplicateDrill(d)] }))}>Duplizieren</button>
+                <button className="ghost danger" onClick={() => del(d)}>Löschen</button>
                 {db.collections.some((c) => !c.drillIds.includes(d.id)) && (
                   <select aria-label="Zu Sammlung hinzufügen" value=""
                     onChange={(e) => {

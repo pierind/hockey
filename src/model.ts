@@ -1,6 +1,6 @@
 import { mid, uid } from './scene'
 import { categories, elements, goals, sihfPlan } from './sihf'
-import { ROUTE_LABELS, SYMBOL_LABELS } from './types'
+import { AGE_CLASSES, ROUTE_LABELS, SYMBOL_LABELS } from './types'
 import type { Collection, Db, Drill, Game, Item, PlanWeek, Player, Pt, SeasonPlan, Session, SessionEntry } from './types'
 
 export type Change = (fn: (db: Db) => Db) => Promise<void>
@@ -84,6 +84,7 @@ export const newDrill = (): Drill => ({
   offIce: false,
   draft: true,
   scene: { rink: 'full', items: [] },
+  author: LOCAL_AUTHOR,
   updatedAt: '',
 })
 
@@ -98,6 +99,23 @@ export const drillProblems = (d: Drill) =>
     !d.categories.length && 'mindestens eine Erscheinungsform',
   ].filter((p): p is string => !!p)
 
+// shortcut: one hardcoded coach, the app has no user accounts; add a setting if other coaches use it.
+export const LOCAL_AUTHOR = 'Pierin Derungs'
+// Author of an imported drill by the host of its source (see scripts/import-*.mjs); sportngin.com hosts the USA Hockey PDFs.
+const AUTHORS: [RegExp, string][] = [
+  [/hockeyakademin\.se$/, 'Svenska Ishockeyförbundet'],
+  [/hockeycanada\.ca$/, 'Hockey Canada'],
+  [/(usahockey|admkids|sportngin)\.com$/, 'USA Hockey'],
+  [/iihf\.com$/, 'IIHF'],
+  [/hockeyshare\.com$/, 'HockeyShare'],
+  [/mobilesport\.ch$/, 'BASPO / J+S (mobilesport.ch)'],
+]
+export function authorOf(source?: string) {
+  if (!source) return LOCAL_AUTHOR
+  const host = new URL(source).hostname
+  return AUTHORS.find(([re]) => re.test(host))?.[1] ?? host.replace(/^www\./, '')
+}
+
 // Spielfeldbegrenzung lines were replaced by the Toblerone (2026-10-11); convert them so drills saved before still open.
 // shortcut: only data already in this browser is converted, old backup files are rejected on import; drop once no old data exists.
 export function migrateDrill(d: Drill): Drill {
@@ -107,15 +125,20 @@ export function migrateDrill(d: Drill): Drill {
     const rot = Math.round((Math.atan2(old.to[1] - old.from[1], old.to[0] - old.from[0]) * 180) / Math.PI / 15) * 15
     return { id: old.id, kind: 'toblerone', at: mid(old.from, old.to), rot } as Item
   })
-  return { ...d, scene: { ...d.scene, items } }
+  // Drills from before the author field (2026-10-31) get one; a cleared author stays empty.
+  return { ...d, author: d.author ?? authorOf(d.source), scene: { ...d.scene, items } }
 }
-export const migrateDb = (db: Db): Db => ({
+// Drills only, so an imported backup is migrated like the stored data without gaining a dummy team.
+export const migrateDrills = (db: Db): Db => ({
   ...db,
+  drills: db.drills.map(migrateDrill),
+  sessions: db.sessions.map((s) => ({ ...s, entries: s.entries.map((e) => ({ ...e, drill: migrateDrill(e.drill) })) })),
+})
+export const migrateDb = (db: Db): Db => ({
+  ...migrateDrills(db),
   players: db.players ?? dummyTeam(),
   plans: db.plans ?? [],
   games: db.games ?? [],
-  drills: db.drills.map(migrateDrill),
-  sessions: db.sessions.map((s) => ({ ...s, entries: s.entries.map((e) => ({ ...e, drill: migrateDrill(e.drill) })) })),
 })
 
 // One read-only collection per Erscheinungsform, derived from the drills' categories so it never goes stale.
@@ -258,11 +281,17 @@ const has = (texts: string[], needle: string) => !needle || texts.some((t) => t.
 const tagged = (d: Drill, category: string, element: string) =>
   (!category || d.categories.includes(category)) && (!element || d.elements.includes(element))
 
-export function filterDrills(drills: Drill[], q: string, category: string, element: string, place: '' | 'on' | 'off') {
+export function filterDrills(drills: Drill[], q: string, category: string, element: string, place: '' | 'on' | 'off', age = '') {
   const needle = q.trim().toLowerCase()
   return drills.filter(
-    (d) => tagged(d, category, element) && (!place || d.offIce === (place === 'off')) && has([d.title, d.description, ...d.keyPoints], needle),
+    (d) => tagged(d, category, element) && (!place || d.offIce === (place === 'off')) && (!age || !!d.ages?.includes(age)) && has([d.title, d.description, ...d.keyPoints, d.author ?? ''], needle),
   )
+}
+
+// Suggestion order: drills focused on the chosen Erscheinungsform, then completed ones (own drills; imports stay drafts), then ones with a picture.
+export function rankDrills(drills: Drill[], category: string) {
+  const score = (d: Drill) => (category && d.primary === category ? 4 : 0) + (d.draft ? 0 : 2) + (d.scene.items.length || d.image ? 1 : 0)
+  return [...drills].sort((a, b) => score(b) - score(a))
 }
 
 // A training matches when its title/notes or one of its drills match, and one drill carries the category/element.
@@ -372,8 +401,10 @@ function checkDrill(d: unknown, w: string) {
   const cats = d.categories
   need(opt(d.primary, (p) => cats.includes(p as string)), `${w}: ungültiger Hauptfokus`)
   need(strs(d.elements) && d.elements.every((e) => ELEMENT_IDS.has(e)), `${w}: unbekanntes Schlüsselelement`)
+  need(opt(d.ages, (a) => strs(a) && a.every((x) => AGE_CLASSES.includes(x))), `${w}: unbekannte Altersklasse`)
   need(opt(d.minutes, (m) => isNum(m) && m >= 0), `${w}: ungültige Dauer`)
   need(opt(d.players, (m) => isNum(m) && m >= 0) && opt(d.goalies, (m) => isNum(m) && m >= 0) && opt(d.material, isStr), `${w}: ungültige Angaben zu Spieler/innen oder Material`)
+  need(opt(d.author, isStr), `${w}: ungültige Autor/in`)
   need(typeof d.offIce === 'boolean' && typeof d.draft === 'boolean', `${w}: Felder fehlen`)
   // Imported files are untrusted: only http(s) links and inline images, never javascript: or other schemes.
   need(opt(d.source, (s) => isStr(s) && /^https?:\/\//.test(s)) && opt(d.image, (s) => isStr(s) && /^(https:\/\/|data:image\/(png|jpeg|gif|webp);base64,)/.test(s)), `${w}: ungültige Quelle oder ungültiges Bild`)

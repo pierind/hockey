@@ -35,7 +35,7 @@ export function Games({ db, change }: { db: Db; change: Change }) {
             <li key={g.id} className="row">
               <button className="link" onClick={() => setOpenId(g.id)}>{gameTitle(g)}</button>
               <span>{g.date ?? 'ohne Datum'}{g.start && ` · ${g.start}`} · {Object.keys(g.lineup).length} eingeteilt</span>
-              <button onClick={() => confirm(`Spiel «${gameTitle(g)}» löschen?`) && change((db) => ({ ...db, games: (db.games ?? []).filter((x) => x.id !== g.id) }))}>Löschen</button>
+              <button className="ghost danger" onClick={() => confirm(`Spiel «${gameTitle(g)}» löschen?`) && change((db) => ({ ...db, games: (db.games ?? []).filter((x) => x.id !== g.id) }))}>Löschen</button>
             </li>
           ))}
         </ul>
@@ -55,31 +55,35 @@ function GameEditor({ g, db, upd, onBack }: { g: Game; db: Db; upd: (fn: (g: Gam
     <>
       <section className="screen-only">
         <div className="row">
-          <button onClick={onBack}>← Alle Spiele</button>
+          <button className="ghost" onClick={onBack}>← Alle Spiele</button>
+          <span className="spacer" />
           <HelpButton topic="games" />
           <button onClick={() => print()}>Drucken / PDF</button>
         </div>
-        <div className="row">
-          <label>Gegner <input defaultValue={g.opponent} onBlur={(e) => {
+        <header className="session-head">
+          <h2>{gameTitle(g)}</h2>
+          <div className="row">
+          <label className="field">Gegner <input defaultValue={g.opponent} onBlur={(e) => {
             const opponent = e.target.value.trim()
             if (opponent !== g.opponent) upd((g) => ({ ...g, opponent }))
           }} /></label>
-          <label>Ort <select value={g.away ? 'away' : 'home'} onChange={(e) => {
+          <label className="field">Ort <select value={g.away ? 'away' : 'home'} onChange={(e) => {
             const away = e.target.value === 'away' || undefined
             upd((g) => ({ ...g, away }))
           }}>
             <option value="home">Heim</option>
             <option value="away">Auswärts</option>
           </select></label>
-          <label>Datum <input type="date" value={g.date ?? ''} onChange={(e) => {
+          <label className="field">Datum <input type="date" value={g.date ?? ''} onChange={(e) => {
             const date = e.target.value || undefined
             upd((g) => ({ ...g, date }))
           }} /></label>
-          <label>Start <input type="time" value={g.start ?? ''} onChange={(e) => {
+          <label className="field">Start <input type="time" value={g.start ?? ''} onChange={(e) => {
             const start = e.target.value || undefined
             upd((g) => ({ ...g, start }))
           }} /></label>
-        </div>
+          </div>
+        </header>
         <div className="row">
           <h3>Aufstellung</h3>
           {others.length > 0 && (
@@ -91,7 +95,7 @@ function GameEditor({ g, db, upd, onBack }: { g: Game; db: Db; upd: (fn: (g: Gam
               {others.map((x) => <option key={x.id} value={x.id}>{x.date ?? 'ohne Datum'} · {gameTitle(x)}</option>)}
             </select>
           )}
-          {Object.keys(g.lineup).length > 0 && <button onClick={() => confirm('Aufstellung leeren?') && upd((g) => ({ ...g, lineup: {} }))}>Leeren</button>}
+          {Object.keys(g.lineup).length > 0 && <button className="ghost danger" onClick={() => confirm('Aufstellung leeren?') && upd((g) => ({ ...g, lineup: {} }))}>Leeren</button>}
         </div>
         <div className="roster">
           {LINEUP_SLOTS.map(({ line, slots }) => (
