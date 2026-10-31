@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { download } from './db'
 import { HelpButton } from './Help'
-import { CategoryFilter, DrillPicker, DrillSummary } from './Library'
+import { CategoryFilter, DrillFinder, DrillSummary } from './Library'
 import { addEntries, blockMinutes, categoryCollections, clock, duplicateSession, filterSessions, fromTemplate, groupPlayers, monthKey, monthLabel, moveIndex, needs, timeline, toIcs, totalMinutes } from './model'
 import type { Change } from './model'
 import { uid } from './scene'
@@ -64,7 +64,7 @@ export function Sessions({ db, change, onEditEntry }: { db: Db; change: Change; 
         )}
         <CalendarButton db={db} />
       </div>
-      <div className="row">
+      <div className="row filters">
         <input type="search" aria-label="Trainings durchsuchen" placeholder="Suchen…" value={q} onChange={(e) => setQ(e.target.value)} />
         <CategoryFilter category={category} element={element} onChange={(c, e) => { setCategory(c); setElement(e) }} />
       </div>
@@ -78,8 +78,8 @@ export function Sessions({ db, change, onEditEntry }: { db: Db; change: Change; 
                   <StatusBadge s={s} />
                   <button className="link" onClick={() => setOpenId(s.id)}>{s.title}</button>
                   <span>{s.date ?? 'ohne Datum'} · {s.entries.length} Übungen · {totalMinutes(s)} Min.</span>
-                  <button onClick={() => change((db) => ({ ...db, sessions: [...db.sessions, duplicateSession(s)] }))}>Duplizieren</button>
-                  <button onClick={() => confirm(`Training «${s.title}» löschen?`) && change((db) => ({ ...db, sessions: db.sessions.filter((x) => x.id !== s.id) }))}>Löschen</button>
+                  <button className="ghost" onClick={() => change((db) => ({ ...db, sessions: [...db.sessions, duplicateSession(s)] }))}>Duplizieren</button>
+                  <button className="ghost danger" onClick={() => confirm(`Training «${s.title}» löschen?`) && change((db) => ({ ...db, sessions: db.sessions.filter((x) => x.id !== s.id) }))}>Löschen</button>
                 </li>
               ))}
             </ul>
@@ -93,6 +93,7 @@ export function Sessions({ db, change, onEditEntry }: { db: Db; change: Change; 
 function SessionEditor({ s, db, upd, onBack, onEdit }: { s: Session; db: Db; upd: (fn: (s: Session) => Session) => void; onBack: () => void; onEdit: (e: SessionEntry) => void }) {
   const [invalid, setInvalid] = useState<string[]>([]) // entries whose typed duration was rejected
   const [dragFrom, setDragFrom] = useState<number | null>(null)
+  const [finder, setFinder] = useState<{ replace?: string; category?: string } | null>(null) // open drill finder: add, or replace that entry
   const setEntry = (id: string, patch: Partial<SessionEntry>) => upd((s) => ({ ...s, entries: s.entries.map((e) => (e.id === id ? { ...e, ...patch } : e)) }))
   const move = (from: number, to: number) => upd((s) => ({ ...s, entries: moveIndex(s.entries, from, to) }))
   const total = totalMinutes(s)
@@ -105,43 +106,48 @@ function SessionEditor({ s, db, upd, onBack, onEdit }: { s: Session; db: Db; upd
 
   return (
     <>
-      <section className="screen-only">
+      <section className="screen-only session">
         <div className="row">
-          <button onClick={onBack}>← Alle Trainings</button>
+          <button className="ghost" onClick={onBack}>← Alle Trainings</button>
+          <span className="spacer" />
           <HelpButton topic="sessions" />
-          <StatusBadge s={s} />
-          {!s.template && <button onClick={() => upd((s) => ({ ...s, final: s.final ? undefined : true }))}>{s.final ? 'Zurück auf Entwurf' : 'Als definitiv markieren'}</button>}
-          <label className="check">
-            <input type="checkbox" checked={!!s.template} onChange={(e) => {
-              const template = e.target.checked || undefined
-              upd((s) => ({ ...s, template, final: undefined }))
-            }} /> Vorlage
-          </label>
-        </div>
-        <div className="row">
-          <label>Titel <input defaultValue={s.title} onBlur={(e) => {
-            const t = e.target.value.trim()
-            if (t && t !== s.title) upd((s) => ({ ...s, title: t }))
-          }} /></label>
-          <label>Datum <input type="date" value={s.date ?? ''} onChange={(e) => {
-            const date = e.target.value || undefined
-            upd((s) => ({ ...s, date }))
-          }} /></label>
-          <label>Start <input type="time" value={s.start ?? ''} onChange={(e) => {
-            const start = e.target.value || undefined
-            upd((s) => ({ ...s, start }))
-          }} /></label>
-          <strong>Total: {total} Min.{s.start && ` · ${span(0, total)}`}</strong>
           <button onClick={() => print()}>Drucken / PDF</button>
         </div>
-        <div className="row">
-          <DrillPicker drills={db.drills} label="Übung aus der Bibliothek hinzufügen" placeholder="Übung hinzufügen…" onPick={(d) => upd((s) => addEntries(s, [d]))} />
+        <header className="session-head">
+          <input className="title-input" aria-label="Titel" defaultValue={s.title} onBlur={(e) => {
+            const t = e.target.value.trim()
+            if (t && t !== s.title) upd((s) => ({ ...s, title: t }))
+          }} />
+          <div className="row">
+            <label className="field">Datum <input type="date" value={s.date ?? ''} onChange={(e) => {
+              const date = e.target.value || undefined
+              upd((s) => ({ ...s, date }))
+            }} /></label>
+            <label className="field">Start <input type="time" value={s.start ?? ''} onChange={(e) => {
+              const start = e.target.value || undefined
+              upd((s) => ({ ...s, start }))
+            }} /></label>
+            <span className="pill">Total: {total} Min.{s.start && ` · ${span(0, total)}`}</span>
+            <span className="spacer" />
+            <StatusBadge s={s} />
+            {!s.template && <button onClick={() => upd((s) => ({ ...s, final: s.final ? undefined : true }))}>{s.final ? 'Zurück auf Entwurf' : 'Als definitiv markieren'}</button>}
+            <label className="check">
+              <input type="checkbox" checked={!!s.template} onChange={(e) => {
+                const template = e.target.checked || undefined
+                upd((s) => ({ ...s, template, final: undefined }))
+              }} /> Vorlage
+            </label>
+          </div>
+          {needLine && <p className="needs">Benötigt: {needLine}</p>}
+        </header>
+        <div className="row add-bar">
+          <button className="primary" onClick={() => setFinder({})}>+ Übungen hinzufügen</button>
           <select aria-label="Alle Übungen einer Sammlung hinzufügen" value="" onChange={(e) => {
             const c = [...categoryCollections(db), ...db.collections].find((c) => c.id === e.target.value)
             const drills = c?.drillIds.map((id) => db.drills.find((d) => d.id === id)).filter((d): d is Drill => !!d) ?? []
             if (drills.length) upd((s) => addEntries(s, drills))
           }}>
-            <option value="">Sammlung hinzufügen…</option>
+            <option value="">Ganze Sammlung hinzufügen…</option>
             <optgroup label="Nach Erscheinungsform">
               {categoryCollections(db).filter((c) => c.drillIds.length).map((c) => <option key={c.id} value={c.id}>{c.name} ({c.drillIds.length})</option>)}
             </optgroup>
@@ -150,7 +156,6 @@ function SessionEditor({ s, db, upd, onBack, onEdit }: { s: Session; db: Db; upd
             </optgroup>
           </select>
         </div>
-        {needLine && <p className="needs">Benötigt: {needLine}</p>}
         <details className="card attendance">
           <summary>Anwesenheit (AWK){s.attendance ? `: ${s.attendance.length} von ${team.length}` : ' · nicht erfasst'}</summary>
           {!s.attendance ? (
@@ -179,7 +184,12 @@ function SessionEditor({ s, db, upd, onBack, onEdit }: { s: Session; db: Db; upd
             if (notes !== s.notes) upd((s) => ({ ...s, notes }))
           }} />
         </label>
-        {s.entries.length === 0 && <p className="empty">Noch keine Übungen in diesem Training.</p>}
+        {s.entries.length === 0 && (
+          <div className="empty-state">
+            <p>Noch keine Übungen. Wähle, was trainiert werden soll, und lass dir passende Übungen vorschlagen.</p>
+            <button className="primary" onClick={() => setFinder({})}>+ Übungen hinzufügen</button>
+          </div>
+        )}
         <ol className="entries">
           {plan.map(({ entries, from, to }, k) => {
             const cards = entries.map((e) => {
@@ -191,9 +201,11 @@ function SessionEditor({ s, db, upd, onBack, onEdit }: { s: Session; db: Db; upd
                 }}>
                   <div className="row">
                     <span className="handle" draggable onDragStart={() => setDragFrom(i)} title="Ziehen zum Verschieben" aria-hidden>⠿</span>
+                    <span className="entry-num">{entries.length > 1 ? `P${entries.indexOf(e) + 1}` : k + 1}</span>
                     {entries.length === 1 && s.start && <span className="time">{span(from, to)}</span>}
-                    <h3>{entries.length > 1 ? `Posten ${entries.indexOf(e) + 1}` : `${k + 1}.`} {e.drill.title || 'Ohne Titel'}</h3>
-                    <label>Dauer (Min.) <input type="number" min={0} defaultValue={e.minutes} aria-invalid={invalid.includes(e.id)} onChange={(ev) => {
+                    <h3>{e.drill.title || 'Ohne Titel'}</h3>
+                    <span className="spacer" />
+                    <label className="minutes">Dauer (Min.) <input type="number" size={3} min={0} defaultValue={e.minutes} aria-invalid={invalid.includes(e.id)} onChange={(ev) => {
                       const n = ev.target.valueAsNumber
                       const ok = Number.isFinite(n) && n >= 0
                       setInvalid((v) => (ok ? v.filter((x) => x !== e.id) : [...v.filter((x) => x !== e.id), e.id]))
@@ -207,11 +219,11 @@ function SessionEditor({ s, db, upd, onBack, onEdit }: { s: Session; db: Db; upd
                     )}
                   </div>
                   <div className="row entry-actions">
-                    <button disabled={!i} onClick={() => move(i, i - 1)}>Nach oben</button>
-                    <button disabled={i === s.entries.length - 1} onClick={() => move(i, i + 1)}>Nach unten</button>
-                    <button onClick={() => onEdit(e)}>Bearbeiten</button>
-                    <DrillPicker drills={db.drills} label={`${e.drill.title || 'Übung'} ersetzen`} placeholder="Ersetzen durch…" onPick={(d) => setEntry(e.id, { drill: structuredClone(d) })} />
-                    <button onClick={() => upd((s) => ({ ...s, entries: s.entries.filter((x) => x.id !== e.id) }))}>Entfernen</button>
+                    <button className="ghost" aria-label="Nach oben" title="Nach oben" disabled={!i} onClick={() => move(i, i - 1)}>↑</button>
+                    <button className="ghost" aria-label="Nach unten" title="Nach unten" disabled={i === s.entries.length - 1} onClick={() => move(i, i + 1)}>↓</button>
+                    <button className="ghost" onClick={() => onEdit(e)}>Bearbeiten</button>
+                    <button className="ghost" onClick={() => setFinder({ replace: e.id, category: e.drill.primary ?? e.drill.categories[0] })}>Ersetzen</button>
+                    <button className="ghost danger" onClick={() => upd((s) => ({ ...s, entries: s.entries.filter((x) => x.id !== e.id) }))}>Entfernen</button>
                   </div>
                   <DrillSummary drill={e.drill} />
                   <label>Notizen für dieses Training <textarea rows={2} defaultValue={e.notes} onBlur={(ev) => {
@@ -235,6 +247,13 @@ function SessionEditor({ s, db, upd, onBack, onEdit }: { s: Session; db: Db; upd
           })}
         </ol>
       </section>
+      {finder && (
+        <DrillFinder drills={db.drills} category={finder.category} inSession={s.entries.map((e) => e.drill.id)}
+          {...(finder.replace
+            ? { title: 'Übung ersetzen', pickLabel: 'Einsetzen', onPick: (d: Drill) => setEntry(finder.replace!, { drill: structuredClone(d) }) }
+            : { title: 'Übungen hinzufügen', pickLabel: 'Hinzufügen', keepOpen: true, onPick: (d: Drill) => upd((s) => addEntries(s, [d])) })}
+          onClose={() => setFinder(null)} />
+      )}
       <div className="print-only">
         <h1>{s.title}</h1>
         <p>{[s.date, s.start && span(0, total), `Total ${total} Min.`].filter(Boolean).join(' · ')}</p>

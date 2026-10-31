@@ -46,7 +46,7 @@ export function Team({ db, change }: { db: Db; change: Change }) {
                 </td>
                 <td><input aria-label={`Gruppe ${p.name}`} list="groups" defaultValue={p.group ?? ''} onBlur={(e) => upd(p.id, { group: e.target.value.trim() || undefined })} /></td>
                 <td>{recorded.length ? `${recorded.filter((s) => s.attendance!.includes(p.id)).length} / ${recorded.length}` : '–'}</td>
-                <td><button onClick={() => remove(p)}>Entfernen</button></td>
+                <td><button className="ghost danger" onClick={() => remove(p)}>Entfernen</button></td>
               </tr>
             ))}
           </tbody>

@@ -28,6 +28,8 @@ export const SKATING: RouteStyle[] = ['forward', 'forwardPuck', 'brake', 'backwa
 // Symbols whose direction matters; they get a rotation handle.
 export const ROTATABLE: string[] = ['goal', 'toblerone']
 export type SymbolKind = keyof typeof SYMBOL_LABELS
+// Altersklassen a drill suits; U18+ covers juniors and adults.
+export const AGE_CLASSES = ['U10', 'U12', 'U14', 'U16', 'U18+']
 export type RouteStyle = keyof typeof ROUTE_LABELS
 
 export type Item =
@@ -47,6 +49,7 @@ export type Drill = {
   categories: string[] // Erscheinungsform ids, e.g. 'EF06'
   primary?: string
   elements: string[] // Schlüsselelement ids, e.g. 'A02'
+  ages?: string[] // see AGE_CLASSES; unset = not classified
   minutes?: number
   players?: number // Spieler/innen needed
   goalies?: number // Torhüter/innen needed
@@ -55,6 +58,7 @@ export type Drill = {
   draft: boolean
   scene: Scene
   source?: string // https link to where an imported drill comes from
+  author?: string // the coach for own drills, the federation or site for imported ones
   image?: string // original diagram of an imported drill: https or data:image URL, shown until a scene is drawn
   updatedAt: string
 }

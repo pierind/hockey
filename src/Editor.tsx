@@ -8,7 +8,7 @@ import { HelpButton } from './Help'
 import { CENTER, Rink } from './Rink'
 import { addItem, commit, dist, initHistory, moveItem, redo, removeItem, straighten, uid, undo, updateItem } from './scene'
 import { categories, categoryLabel, elementById, elements } from './sihf'
-import { ROTATABLE, ROUTE_LABELS, SKATING, SYMBOL_LABELS } from './types'
+import { AGE_CLASSES, ROTATABLE, ROUTE_LABELS, SKATING, SYMBOL_LABELS } from './types'
 import type { Drill, Item, Pt, RinkTemplate, RouteStyle, Scene, SymbolKind } from './types'
 
 type Tool = 'select' | SymbolKind | RouteStyle | 'free' | 'text'
@@ -216,7 +216,7 @@ export function Editor({ initial, saved, variantOf, onSave, onClose }: {
   return (
     <main>
       <div className="row toolbar">
-        <button onClick={close}>← Zurück</button>
+        <button className="ghost" onClick={close}>← Zurück</button>
         <h1>{meta.title || 'Neue Übung'}</h1>
         {variantOf && <span className="chip">Variante von «{variantOf}»</span>}
         <HelpButton topic="editor" />
@@ -290,7 +290,7 @@ export function Editor({ initial, saved, variantOf, onSave, onClose }: {
                 </>
               )}
               <button onClick={duplicateSel}>Duplizieren</button>
-              <button onClick={deleteSel}>Löschen</button>
+              <button className="ghost danger" onClick={deleteSel}>Löschen</button>
             </div>
           )}
           <Legend />
@@ -368,6 +368,15 @@ function DrillForm({ d, set }: { d: Drill; set: (patch: Partial<Drill>) => void 
           ))}
         </fieldset>
       )}
+      <fieldset>
+        <legend>Altersklassen</legend>
+        {AGE_CLASSES.map((a) => (
+          <label key={a} className="check">
+            <input type="checkbox" checked={!!d.ages?.includes(a)}
+              onChange={(e) => set({ ages: AGE_CLASSES.filter((x) => (x === a ? e.target.checked : d.ages?.includes(x))) })} /> {a}
+          </label>
+        ))}
+      </fieldset>
       <label>Dauer-Vorschlag (Min.)
         <input type="number" min={0} defaultValue={d.minutes ?? ''} aria-invalid={badNumber(d.minutes)}
           onChange={(e) => set({ minutes: e.target.value === '' ? undefined : Number(e.target.value) })} />
@@ -385,6 +394,7 @@ function DrillForm({ d, set }: { d: Drill; set: (patch: Partial<Drill>) => void 
       </div>
       {(badNumber(d.players) || badNumber(d.goalies)) && <p className="problems">Anzahl muss 0 oder mehr sein.</p>}
       <label>Material <input value={d.material ?? ''} placeholder="z. B. 20 Pucks, 6 Pylonen" onChange={(e) => set({ material: e.target.value || undefined })} /></label>
+      <label>Autor/in <input value={d.author ?? ''} onChange={(e) => set({ author: e.target.value })} /></label>
       <label className="check"><input type="checkbox" checked={d.offIce} onChange={(e) => set({ offIce: e.target.checked })} /> Off-Ice-Übung</label>
     </form>
   )

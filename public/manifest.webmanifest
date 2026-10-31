@@ -1,6 +1,6 @@
 {
-  "name": "Eishockey Trainingsplaner",
-  "short_name": "Training",
+  "name": "HockeyCoach",
+  "short_name": "HockeyCoach",
   "lang": "de-CH",
   "start_url": ".",
   "scope": ".",

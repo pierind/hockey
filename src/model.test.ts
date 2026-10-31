@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { addDays, coveredElements, toIcs, setSlot, removePlayer, gameTitle, dummyTeam, fillDates, migrateDb, newPlan, sessionsInWeek, addEntries, blocks, clock, needs, timeline, totalMinutes, categoryCollections, categoryMinutes, deleteDrill, fromTemplate, mergeDb, saveVariant, selectSessions, filterDrills, filterSessions, isoWeek, periodStats, drillProblems, duplicateDrill, migrateDrill, moveIndex, newDrill, upsertDrill, validateDb } from './model'
+import { emptyDb, addDays, coveredElements, toIcs, setSlot, removePlayer, gameTitle, dummyTeam, fillDates, migrateDb, newPlan, sessionsInWeek, addEntries, blocks, clock, needs, timeline, totalMinutes, categoryCollections, categoryMinutes, deleteDrill, fromTemplate, mergeDb, saveVariant, selectSessions, filterDrills, filterSessions, isoWeek, periodStats, drillProblems, duplicateDrill, migrateDrill, migrateDrills, moveIndex, rankDrills, newDrill, LOCAL_AUTHOR, upsertDrill, validateDb } from './model'
 import { sihfPlan } from './sihf'
 import type { Db, Drill } from './types'
 
@@ -93,6 +93,18 @@ test('old Spielfeldbegrenzung lines open as Toblerones along the same line', () 
   expect(migrateDrill(old).scene.items).toEqual([{ id: 'b', kind: 'toblerone', at: [10, 15], rot: 90 }])
 })
 
+test('drills without author get the coach, or the federation or site of their source', () => {
+  const by = (source?: string, author?: string) => migrateDrill(drill({ source, author })).author
+  expect(by(undefined)).toBe(LOCAL_AUTHOR)
+  expect(by('https://hockeyakademin.se/ovningar/x')).toBe('Svenska Ishockeyförbundet')
+  expect(by('https://cdn3.sportngin.com/a.pdf#page=2')).toBe('USA Hockey')
+  expect(by('https://www.example.org/drill')).toBe('example.org')
+  expect(by('https://blob.iihf.com/x.pdf', '')).toBe('') // cleared by the coach
+  const db = { ...emptyDb(), drills: [drill({ source: 'https://video.hockeycanada.ca/x', author: undefined })] }
+  expect(migrateDrills(db).drills[0].author).toBe('Hockey Canada')
+  expect(migrateDrills({ ...db, players: undefined }).players).toBeUndefined() // no dummy team for imports
+})
+
 test('category collections follow the drills\' Erscheinungsformen', () => {
   const db = sample()
   const auto = categoryCollections(db)
@@ -112,6 +124,10 @@ test('search finds drills and trainings by Erscheinungsform and Schlüsselelemen
   const db = sample()
   expect(filterDrills(db.drills, '', 'EF08', 'U02', '')).toHaveLength(1)
   expect(filterDrills(db.drills, '', '', 'D01', '')).toHaveLength(0)
+  expect(filterDrills([...db.drills, drill({ author: 'Hockey Canada' })], 'hockey canada', '', '', '')).toHaveLength(1)
+  expect(filterDrills([drill({ ages: ['U10', 'U12'] }), drill({ ages: ['U14'] }), drill()], '', '', '', '', 'U12')).toHaveLength(1)
+  const ranked = rankDrills([drill({ id: 'a', draft: true }), drill({ id: 'b', draft: false }), drill({ id: 'c', draft: true, primary: 'EF06' })], 'EF06')
+  expect(ranked.map((d) => d.id)).toEqual(['c', 'b', 'a'])
   expect(filterSessions(db.sessions, '', 'EF08', '')).toHaveLength(1)
   expect(filterSessions(db.sessions, '', '', 'B01')).toHaveLength(0)
   expect(filterSessions(db.sessions, 'sofort anbieten', '', '')).toHaveLength(1)

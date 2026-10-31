@@ -1,4 +1,4 @@
-// Applies private/meta/classification.json (hand-made Erscheinungsform per drill) to imported backup files in private/.
+// Applies private/meta/classification.json (Erscheinungsformen and Schlüsselelemente per drill) to imported backup files in private/.
 // Usage: node scripts/apply-classification.mjs [private/x.json ...]   (default: all private/*.json)
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 
@@ -26,7 +26,7 @@ for (const file of files) {
     d.categories = c.categories
     if (c.primary) d.primary = c.primary
     else delete d.primary
-    d.elements = d.elements.filter((e) => c.categories.includes(elementCat[e]))
+    d.elements = (c.elements ?? d.elements).filter((e) => c.categories.includes(elementCat[e]))
     n++
   }
   writeFileSync(file, JSON.stringify(db, null, 2))

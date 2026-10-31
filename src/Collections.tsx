@@ -22,7 +22,8 @@ export function Collections({ db, change, onEdit }: { db: Db; change: Change; on
   return (
     <section>
       <div className="row"><h2>Sammlungen</h2><HelpButton topic="collections" /></div>
-      <h3>Nach Erscheinungsform</h3>
+      <h3 className="step">Nach Erscheinungsform</h3>
+      <div className="fold-grid">
       {categoryCollections(db).map((c) => (
         <Fold key={c.id} summary={`${c.name} (${c.drillIds.length})`}>
           {() => c.drillIds.length === 0 ? <p className="empty">Noch keine Übungen.</p> : (
@@ -35,7 +36,8 @@ export function Collections({ db, change, onEdit }: { db: Db; change: Change; on
           )}
         </Fold>
       ))}
-      <h3>Eigene Sammlungen</h3>
+      </div>
+      <h3 className="step">Eigene Sammlungen</h3>
       <form className="row" onSubmit={(e) => {
         e.preventDefault()
         const n = name.trim() || 'Neue Sammlung'
@@ -57,7 +59,7 @@ export function Collections({ db, change, onEdit }: { db: Db; change: Change; on
               const v = e.target.value.trim() || undefined
               if (v !== c.description) upd(c.id, (c) => ({ ...c, description: v }))
             }} />
-            <button onClick={() => confirm(`Sammlung «${c.name}» löschen? Die Übungen bleiben in der Bibliothek.`) &&
+            <button className="ghost danger" onClick={() => confirm(`Sammlung «${c.name}» löschen? Die Übungen bleiben in der Bibliothek.`) &&
               change((db) => ({ ...db, collections: db.collections.filter((x) => x.id !== c.id) }))}>Löschen</button>
           </div>
           {c.drillIds.length === 0 ? <p className="empty">Noch leer.</p> : (
@@ -67,7 +69,7 @@ export function Collections({ db, change, onEdit }: { db: Db; change: Change; on
                 return d && (
                   <li key={id}>
                     <button className="link" onClick={() => onEdit(d)}>{d.title || 'Ohne Titel'}</button>{' '}
-                    <button onClick={() => upd(c.id, (c) => ({ ...c, drillIds: c.drillIds.filter((x) => x !== id) }))}>Entfernen</button>
+                    <button className="ghost danger" onClick={() => upd(c.id, (c) => ({ ...c, drillIds: c.drillIds.filter((x) => x !== id) }))}>Entfernen</button>
                   </li>
                 )
               })}

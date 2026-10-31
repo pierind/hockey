@@ -7,7 +7,7 @@ import { Editor } from './Editor'
 import { Games } from './Games'
 import { Help, HelpButton } from './Help'
 import { Library } from './Library'
-import { emptyDb, mergeDb, migrateDb, migrateDrill, saveVariant, upsertDrill, validateDb } from './model'
+import { emptyDb, mergeDb, migrateDb, migrateDrill, migrateDrills, saveVariant, upsertDrill, validateDb } from './model'
 import { uid } from './scene'
 import type { Change } from './model'
 import { Season } from './Season'
@@ -75,7 +75,7 @@ export function App() {
   async function importBackup(file: File) {
     let next: Db
     try {
-      next = validateDb(JSON.parse(await file.text()))
+      next = migrateDrills(validateDb(JSON.parse(await file.text()))) // same as the stored drills, or merging copies every unchanged one
     } catch (e) {
       setStatus(`Import abgelehnt, nichts geändert: ${(e as Error).message}`)
       return
@@ -118,7 +118,7 @@ export function App() {
             <svg viewBox="0 0 24 24" width={30} height={30} aria-hidden fill="none" stroke="currentColor" strokeWidth={1.8}>
               <rect x={1.5} y={5} width={21} height={14} rx={5} /><path d="M12 5v14" /><circle cx={12} cy={12} r={2.6} />
             </svg>
-            Eishockey Trainingsplaner
+            HockeyCoach
           </h1>
           <nav className="tabs" aria-label="Bereiche">
             {TABS.map(([t, label]) => <button key={t} aria-current={tab === t ? 'page' : undefined} onClick={() => setTab(t)}>{label}</button>)}
