@@ -15,6 +15,13 @@ test('coaches board: draw, erase, undo, keep after reload', async ({ page }) => 
     await page.mouse.up()
   }
 
+  // Vollbild: the rink fills the screen below one tool row and still takes drawings
+  await page.getByRole('button', { name: 'Vollbild', exact: true }).click()
+  const fullBox = (await board.boundingBox())!
+  expect(fullBox.width).toBeGreaterThan(page.viewportSize()!.width - 40)
+  await page.getByRole('button', { name: 'Vollbild beenden' }).click()
+  await expect(page.getByRole('heading', { name: 'Taktiktafel' })).toBeVisible()
+
   await draw(0.3)
   await page.getByRole('button', { name: 'Stift Rot' }).click()
   await draw(0.6)

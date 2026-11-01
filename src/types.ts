@@ -46,7 +46,7 @@ export type Drill = {
   title: string
   description: string
   keyPoints: string[]
-  categories: string[] // Erscheinungsform ids, e.g. 'EF06'
+  categories: string[] // Erscheinungsform ids, e.g. 'EF05'
   primary?: string
   elements: string[] // Schlüsselelement ids, e.g. 'A02'
   ages?: string[] // see AGE_CLASSES; unset = not classified

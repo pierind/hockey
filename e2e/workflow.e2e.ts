@@ -63,7 +63,7 @@ test('coach workflow', async ({ page }) => {
   // Finder: pick the goal (Erscheinungsform), then add the suggestion twice without closing the dialog
   await page.getByRole('button', { name: '+ Übungen hinzufügen' }).first().click()
   const finder = page.getByRole('dialog', { name: 'Übungen hinzufügen' })
-  await finder.getByRole('group', { name: 'Erscheinungsform' }).getByRole('button', { name: /EF08/ }).click()
+  await finder.getByRole('group', { name: 'Erscheinungsform' }).getByRole('button', { name: /EF07/ }).click()
   await finder.getByRole('button', { name: 'Hinzufügen: Give and Go Test' }).click()
   await finder.getByRole('button', { name: 'Hinzufügen: Give and Go Test' }).click()
   await expect(finder.getByText('2 hinzugefügt')).toBeVisible()

@@ -7,7 +7,7 @@ import { oneCollection } from './one-collection.mjs'
 const SITE = 'https://hockeyakademin.se'
 const UA = 'HockeyPlannerPrivateImporter/1.0 (private, non-commercial drill import; 1 req/s)'
 // Site «game form» → SIHF Erscheinungsform (only where it clearly matches).
-const EF = { skridskoakning: 'EF03', klubbteknik: 'EF05', 'passning-och-mottagning': 'EF06', 'skott-och-malskytte': 'EF07', narkampsspel: 'EF09' }
+const EF = { skridskoakning: 'EF03', klubbteknik: 'EF04', 'passning-och-mottagning': 'EF05', 'skott-och-malskytte': 'EF06', narkampsspel: 'EF08' }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 async function get(url) {

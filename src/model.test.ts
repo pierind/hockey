@@ -8,8 +8,8 @@ const drill = (over: Partial<Drill> = {}): Drill => ({
   title: 'Give and Go',
   description: 'Zu zweit',
   keyPoints: ['Sofort anbieten'],
-  categories: ['EF06', 'EF08'],
-  primary: 'EF08',
+  categories: ['EF05', 'EF07'],
+  primary: 'EF07',
   elements: ['U02'],
   minutes: 12,
   draft: false,
@@ -108,8 +108,8 @@ test('drills without author get the coach, or the federation or site of their so
 test('category collections follow the drills\' Erscheinungsformen', () => {
   const db = sample()
   const auto = categoryCollections(db)
-  expect(auto).toHaveLength(10)
-  expect(auto.find((c) => c.id === 'EF06')?.drillIds).toEqual([db.drills[0].id])
+  expect(auto).toHaveLength(9)
+  expect(auto.find((c) => c.id === 'EF05')?.drillIds).toEqual([db.drills[0].id])
   expect(auto.find((c) => c.id === 'EF01')?.drillIds).toEqual([])
 })
 
@@ -122,13 +122,13 @@ test('isoWeek follows ISO 8601 across year boundaries', () => {
 
 test('search finds drills and trainings by Erscheinungsform and Schlüsselelement', () => {
   const db = sample()
-  expect(filterDrills(db.drills, '', 'EF08', 'U02', '')).toHaveLength(1)
+  expect(filterDrills(db.drills, '', 'EF07', 'U02', '')).toHaveLength(1)
   expect(filterDrills(db.drills, '', '', 'D01', '')).toHaveLength(0)
   expect(filterDrills([...db.drills, drill({ author: 'Hockey Canada' })], 'hockey canada', '', '', '')).toHaveLength(1)
   expect(filterDrills([drill({ ages: ['U10', 'U12'] }), drill({ ages: ['U14'] }), drill()], '', '', '', '', 'U12')).toHaveLength(1)
-  const ranked = rankDrills([drill({ id: 'a', draft: true }), drill({ id: 'b', draft: false }), drill({ id: 'c', draft: true, primary: 'EF06' })], 'EF06')
+  const ranked = rankDrills([drill({ id: 'a', draft: true }), drill({ id: 'b', draft: false }), drill({ id: 'c', draft: true, primary: 'EF05' })], 'EF05')
   expect(ranked.map((d) => d.id)).toEqual(['c', 'b', 'a'])
-  expect(filterSessions(db.sessions, '', 'EF08', '')).toHaveLength(1)
+  expect(filterSessions(db.sessions, '', 'EF07', '')).toHaveLength(1)
   expect(filterSessions(db.sessions, '', '', 'B01')).toHaveLength(0)
   expect(filterSessions(db.sessions, 'sofort anbieten', '', '')).toHaveLength(1)
 })
@@ -151,8 +151,8 @@ test('selectSessions filters by status and inclusive date range, dropping undate
 test('categoryMinutes splits a drill\'s minutes across its Erscheinungsformen', () => {
   const { periods, rows } = categoryMinutes(sample().sessions, () => 'total')
   expect(periods).toEqual(['total'])
-  expect(rows).toHaveLength(10)
-  expect(rows.find((r) => r.category === 'EF06')?.total).toBe(12) // 2 entries × 12 min, half each to EF06 and EF08
+  expect(rows).toHaveLength(9)
+  expect(rows.find((r) => r.category === 'EF05')?.total).toBe(12) // 2 entries × 12 min, half each to EF05 and EF07
   expect(rows.reduce((sum, r) => sum + r.total, 0)).toBe(24)
 })
 

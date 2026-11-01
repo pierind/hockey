@@ -18,12 +18,11 @@
 | EF01 | Sich stabil und geschickt bewegen |
 | EF02 | Hochintensive Spielaktionen in kurzen zeitlichen Abständen bis ans Spielende wiederholen |
 | EF03 | Dynamisch und agil Schlittschuhlaufen |
-| EF04 | Schlittschuhe steuern |
-| EF05 | Den Puck variantenreich und an die Spielsituation angepasst führen |
-| EF06 | Gemeinsam in Puckbesitz bleiben und situationsangepasste Lösungen finden |
-| EF07 | Situationsangepasst und variantenreich Tore erzielen |
-| EF08 | Überzahlsituationen kreieren und erfolgreich nutzen |
-| EF09 | Geschickt und fair Zweikämpfe bestreiten |
+| EF04 | Den Puck variantenreich und an die Spielsituation angepasst führen |
+| EF05 | Gemeinsam in Puckbesitz bleiben und situationsangepasste Lösungen finden |
+| EF06 | Situationsangepasst und variantenreich Tore erzielen |
+| EF07 | Überzahlsituationen kreieren und erfolgreich nutzen |
+| EF08 | Geschickt und fair Zweikämpfe bestreiten |
 
 ## Schlüsselelemente und Trainingsziele
 
@@ -69,15 +68,9 @@ H01 wird während der Eissaison ebenfalls als begleitendes Off-Ice-Ziel verwende
 | D17 | bewusstes einsetzen der Innen- und Aussenkante vor- und rückwärts (auch sliding | Die Kinder beschleunigen beim Vorwärtsfahren durch Schlangenlinien mit beiden Schlittschuhen auf dem Eis. |
 | D18 | verlangsamen vw und rw | Die Kinder reduzieren ihre Geschwindigkeit, indem sie kontrolliert auf einer Kante rutschen und das Gleichgewicht halten. |
 
-D17 hat denselben Schlüsseltext und dasselbe Ziel wie E01. Die Quelle ordnet den Eintrag in Eiswoche 1 EF04 zu, in Eiswochen 19 und 29 jedoch EF03. Diese unterschiedliche Zuordnung bleibt erhalten.
+In Eiswoche 1 steht derselbe Schlüsseltext mit demselben Ziel unter der Überschrift «Schlittschuhe steuern», in Eiswochen 19 und 29 unter EF03. «Schlittschuhe steuern» ist keine Erscheinungsform des U12-Plans; der Eintrag ist hier D17 (EF03).
 
-### EF04 — Schlittschuhe steuern
-
-| Kennung | Schlüsselelement | Trainingsziel |
-| --- | --- | --- |
-| E01 | bewusstes einsetzen der Innen- und Aussenkante vor- und rückwärts (auch sliding | Die Kinder beschleunigen beim Vorwärtsfahren durch Schlangenlinien mit beiden Schlittschuhen auf dem Eis. |
-
-### EF05 — Den Puck variantenreich und an die Spielsituation angepasst führen
+### EF04 — Den Puck variantenreich und an die Spielsituation angepasst führen
 
 | Kennung | Schlüsselelement | Trainingsziel |
 | --- | --- | --- |
@@ -91,7 +84,7 @@ D17 hat denselben Schlüsseltext und dasselbe Ziel wie E01. Die Quelle ordnet de
 | P08 | Inside | Die Kinder entwickeln das Bewusstsein, den Puck zu schützen, indem sie sich zwischen Puck und Gegner positionieren (Inside). |
 | P09 | Wahrnehmung (Scanning) | Die Kinder nehmen während des Puckführens verschiedene Spielsituationen wahr und reagieren darauf (Head-up). |
 
-### EF06 — Gemeinsam in Puckbesitz bleiben und situationsangepasste Lösungen finden
+### EF05 — Gemeinsam in Puckbesitz bleiben und situationsangepasste Lösungen finden
 
 | Kennung | Schlüsselelement | Trainingsziel |
 | --- | --- | --- |
@@ -104,7 +97,7 @@ D17 hat denselben Schlüsseltext und dasselbe Ziel wie E01. Die Quelle ordnet de
 
 A01 und A06 haben denselben Schlüsseltext, aber unterschiedliche Ziele. Sie dürfen bei einer späteren Digitalisierung nicht allein anhand des Namens zusammengeführt werden.
 
-### EF07 — Situationsangepasst und variantenreich Tore erzielen
+### EF06 — Situationsangepasst und variantenreich Tore erzielen
 
 | Kennung | Schlüsselelement | Trainingsziel |
 | --- | --- | --- |
@@ -115,7 +108,7 @@ A01 und A06 haben denselben Schlüsseltext, aber unterschiedliche Ziele. Sie dü
 | T05 | Schusslinie finden (Tor treffen) | Die Kinder treffen trotz gegnerischem Druck gezielt das Tor. |
 | T06 | Forehand gezogen | Die Kinder zielen und schiessen mit einem gezogenen Forehandschuss genau in eine Lücke. |
 
-### EF08 — Überzahlsituationen kreieren und erfolgreich nutzen
+### EF07 — Überzahlsituationen kreieren und erfolgreich nutzen
 
 | Kennung | Schlüsselelement | Trainingsziel |
 | --- | --- | --- |
@@ -126,9 +119,9 @@ A01 und A06 haben denselben Schlüsseltext, aber unterschiedliche Ziele. Sie dü
 | U05 | Footspeed | Die Kinder setzen die Gegnerin durch aktives Schlittschuhlaufen sofort unter Druck (Footspeed). |
 | U06 | Pressure | Die Kinder erkennen nach einem Puckverlust die Spielsituation sofort. Stehen sie dem Puckführer am nächsten, setzen sie ihn gezielt unter Druck und leiten so den Puckgewinn aktiv ein. |
 
-U04, U05 und U06 stehen in der Quelle unter EF08. Diese Zuordnung wird nicht eigenmächtig in eine defensive Kategorie geändert.
+U04, U05 und U06 stehen in der Quelle unter EF07. Diese Zuordnung wird nicht eigenmächtig in eine defensive Kategorie geändert.
 
-### EF09 — Geschickt und fair Zweikämpfe bestreiten
+### EF08 — Geschickt und fair Zweikämpfe bestreiten
 
 | Kennung | Schlüsselelement | Trainingsziel |
 | --- | --- | --- |
@@ -199,7 +192,7 @@ Anschliessend: **Sommerpause**.
 
 | Monat | Woche | Spezial | Training Nr. → Katalogeintrag | Begleitendes Off-Ice-Ziel | Persönlichkeit |
 | --- | --- | --- | --- | --- | --- |
-| August | 1 | — | D01, E01 | B01 | V11 |
+| August | 1 | — | D01, D17 | B01 | V11 |
 | August | 2 | — | D02, D03, P05 | O01 | V02 |
 | September | 3 | Elterninfo | P03, P01 | B03 | V04 |
 | September | 4 | — | D04, A01, U01 | H01 | V12 |

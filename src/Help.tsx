@@ -83,7 +83,7 @@ const HELP = {
       <ul>
         <li>Oben die Abfrage wählen: <b>Bericht</b>, <b>Gruppierung</b> (Gesamt, pro Woche nach ISO-Kalenderwoche, pro Monat), <b>Status</b> (definitiv, geplant oder beides) und optional einen Zeitraum <b>Von / Bis</b>.</li>
         <li><b>Trainings</b>: Anzahl Trainings und Minuten pro Zeitraum, getrennt nach definitiv und geplant (Entwurf).</li>
-        <li><b>Minuten pro Erscheinungsform</b>: alle Erscheinungsformen (die neun aus dem U12-Plan und die der Torhüter/innen) mit Minuten pro Zeitraum (dunkler = mehr) und Total. Hat eine Übung mehrere Erscheinungsformen, werden ihre Minuten gleichmässig aufgeteilt, damit die Summe der Trainingszeit entspricht. Übungen ohne Erscheinungsform erscheinen als «Ohne Erscheinungsform».</li>
+        <li><b>Minuten pro Erscheinungsform</b>: alle Erscheinungsformen (die acht aus dem U12-Plan und die der Torhüter/innen) mit Minuten pro Zeitraum (dunkler = mehr) und Total. Hat eine Übung mehrere Erscheinungsformen, werden ihre Minuten gleichmässig aufgeteilt, damit die Summe der Trainingszeit entspricht. Übungen ohne Erscheinungsform erscheinen als «Ohne Erscheinungsform».</li>
         <li>Minuten sind die Dauern der Übungen im Training. Trainings ohne Datum werden nicht gezählt.</li>
       </ul>
     ),
@@ -130,7 +130,7 @@ const HELP = {
         <li>Mit Finger, Apple Pencil oder Maus zeichnen; Farbe Schwarz, Rot oder Blau wählen. Ein Tipp setzt einen Punkt.</li>
         <li><b>Radierer</b>: über Striche wischen, um sie zu entfernen. <b>Alles löschen</b> lässt sich mit «Rückgängig» zurückholen.</li>
         <li>Mit dem Apple Pencil: sobald der Stift benutzt wurde, zeichnen Finger nicht mehr (Handballen darf aufliegen).</li>
-        <li>Auf dem iPad am besten als App installieren (siehe Daten & Backup), dann nutzt die Tafel den ganzen Bildschirm.</li>
+        <li><b>Vollbild</b>: die Tafel deckt den ganzen Bildschirm ab, nur eine Werkzeugleiste bleibt; am besten das iPad quer halten. «Vollbild beenden» führt zurück. Als App installiert (siehe Daten & Backup) verschwinden auch die Browserleisten ganz.</li>
       </ul>
     ),
   },

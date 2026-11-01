@@ -31,6 +31,7 @@ export function Board() {
   const [tool, setTool] = useState<'pen' | 'eraser'>('pen')
   const [color, setColor] = useState(COLORS[0][0])
   const [loaded, setLoaded] = useState(false)
+  const [full, setFull] = useState(false) // board covers the whole screen, app bar hidden
   const svg = useRef<SVGSVGElement>(null)
   const gesture = useRef<{ pointerId: number; stroke?: Stroke } | null>(null)
   const penUsed = useRef(false) // palm rejection: after the first Apple Pencil touch, fingers no longer draw
@@ -87,11 +88,17 @@ export function Board() {
     setPreview(null)
   }
 
+  function toggleFull() {
+    setFull(!full)
+    // Also hides the browser bars where allowed (desktop, iPad Safari 16.4+); the CSS overlay works without it.
+    if (!full) document.documentElement.requestFullscreen?.().catch(() => {})
+    else if (document.fullscreenElement) document.exitFullscreen().catch(() => {})
+  }
+
   return (
-    <section className="board">
+    <section className={full ? 'board full' : 'board'}>
       <div className="row board-tools" role="toolbar" aria-label="Taktiktafel">
-        <h2>Taktiktafel</h2>
-        <HelpButton topic="board" />
+        {!full && <><h2>Taktiktafel</h2><HelpButton topic="board" /></>}
         <div className="row" role="group" aria-label="Stift">
           {COLORS.map(([c, name]) => (
             <button key={c} aria-label={`Stift ${name}`} aria-pressed={tool === 'pen' && color === c} onClick={() => { setTool('pen'); setColor(c) }}>
@@ -106,9 +113,11 @@ export function Board() {
         <select aria-label="Feldvorlage" value={board.rink} onChange={(e) => setHist((h) => commit(h, { ...h.present, rink: e.target.value as RinkTemplate }))}>
           {TEMPLATES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </select>
+        <span className="spacer" />
+        <button className={full ? 'primary' : ''} onClick={toggleFull}>{full ? 'Vollbild beenden' : 'Vollbild'}</button>
       </div>
       <div className="board-canvas">
-        <Rink ref={svg} template={board.rink} role="application" aria-label="Taktiktafel: mit Finger, Stift oder Maus zeichnen"
+        <Rink ref={svg} template={board.rink} style={full ? { height: '100%' } : undefined} role="application" aria-label="Taktiktafel: mit Finger, Stift oder Maus zeichnen"
           onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel}>
           {board.strokes.map((s, i) => <StrokeLine key={i} s={s} />)}
         </Rink>

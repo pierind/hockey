@@ -160,7 +160,7 @@ function grayPage(pdf, page, els) {
 
 // Only clear matches, most specific first; the first is the primary category.
 const CATS = [
-  ['EF07', /shot|shoot|scor/i], ['EF06', /pass|receiv/i], ['EF05', /puck|stickhandl/i], ['EF09', /check|battle|angling/i],
+  ['EF06', /shot|shoot|scor/i], ['EF05', /pass|receiv/i], ['EF04', /puck|stickhandl/i], ['EF08', /check|battle|angling/i],
   ['EF03', /skat|stride|crossover|stop|turn|pivot|glid|push|c-cut|start|edge|scoot/i], ['EF01', /balance|agility|stance|getting up|jump/i],
 ]
 const categoriesOf = (title) => /^(Free Skate|Warm-up|Fun Time|Game)/.test(title) ? [] : CATS.filter(([, re]) => re.test(title)).map(([id]) => id)

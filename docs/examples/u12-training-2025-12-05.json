@@ -51,14 +51,13 @@
       ],
       "categories": [
         "EF03",
-        "EF04",
-        "EF08",
-        "EF09"
+        "EF07",
+        "EF08"
       ],
       "elements": [
         "D02",
         "D07",
-        "E01",
+        "D17",
         "U01"
       ],
       "offIce": false,
@@ -717,8 +716,8 @@
         "Fliegender Wechsel"
       ],
       "categories": [
-        "EF06",
-        "EF07"
+        "EF05",
+        "EF06"
       ],
       "elements": [],
       "offIce": false,
@@ -837,7 +836,7 @@
         ]
       },
       "updatedAt": "2026-10-11T20:57:37.615Z",
-      "primary": "EF06",
+      "primary": "EF05",
       "minutes": 20
     },
     {
@@ -883,7 +882,7 @@
       "keyPoints": [],
       "categories": [
         "EF01",
-        "EF09"
+        "EF08"
       ],
       "elements": [
         "B03"
@@ -999,14 +998,13 @@
             ],
             "categories": [
               "EF03",
-              "EF04",
-              "EF08",
-              "EF09"
+              "EF07",
+              "EF08"
             ],
             "elements": [
               "D02",
               "D07",
-              "E01",
+              "D17",
               "U01"
             ],
             "offIce": false,
@@ -1670,8 +1668,8 @@
               "Fliegender Wechsel"
             ],
             "categories": [
-              "EF06",
-              "EF07"
+              "EF05",
+              "EF06"
             ],
             "elements": [],
             "offIce": false,
@@ -1790,7 +1788,7 @@
               ]
             },
             "updatedAt": "2026-10-11T20:57:37.615Z",
-            "primary": "EF06",
+            "primary": "EF05",
             "minutes": 20
           },
           "minutes": 20,
@@ -1858,7 +1856,7 @@
             "keyPoints": [],
             "categories": [
               "EF01",
-              "EF09"
+              "EF08"
             ],
             "elements": [
               "B03"
