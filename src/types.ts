@@ -68,7 +68,8 @@ export type SessionEntry = { id: string; drill: Drill; minutes: number; notes: s
 export type Session = { id: string; title: string; date?: string; start?: string /* 'HH:MM' */; final?: boolean; template?: boolean; notes?: string; attendance?: string[] /* present player ids; unset = not recorded */; entries: SessionEntry[] } // final: definitive, otherwise a draft/plan
 // lineup: slot id (see LINEUP_SLOTS) -> player id.
 export type Game = { id: string; opponent: string; away?: boolean; date?: string; start?: string /* 'HH:MM' */; notes?: string; lineup: Record<string, string> }
-export type Player = { id: string; name: string; number?: number; position: 'F' | 'D' | 'G'; group?: string }
+// Dossier: goals = Schlüsselelement ids the player works on; notes = dated observations, newest added last.
+export type Player = { id: string; name: string; number?: number; position: 'F' | 'D' | 'G'; group?: string; goals?: string[]; notes?: { date: string; text: string }[] }
 // Season plan: one row per phase week, like the SIHF Jahresablauf. trainings: target Schlüsselelemente per planned training.
 export type PlanWeek = {
   id: string

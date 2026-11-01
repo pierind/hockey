@@ -11,6 +11,7 @@ const HELP = {
         <li>Alle Daten liegen nur in diesem Browser auf diesem Gerät. Browserdaten löschen, privates Surfen oder ein anderer Browser bedeuten: Daten weg bzw. nicht sichtbar.</li>
         <li>Darum regelmässig <b>Backup exportieren</b>. Die Datei enthält alle Übungen mit Zeichnungen, Sammlungen und Trainings.</li>
         <li><b>Backup importieren</b> prüft die Datei zuerst. Ist sie fehlerhaft, bleibt alles unverändert. Danach wählen:</li>
+        <li>Beim Importieren lassen sich <b>mehrere Dateien auf einmal</b> wählen (z. B. alle Übungsquellen für ein neues Gerät); sie werden zusammen importiert. Kommt dieselbe Übung in zwei Dateien vor, wird der Import abgelehnt und nichts geändert.</li>
         <li><b>Hinzufügen</b>: bestehende Daten bleiben. Gleiche Einträge werden übersprungen; eine Übung oder ein Training, das hier schon existiert aber anders ist, wird als Kopie «(Import)» ergänzt. Gleichnamige Sammlungen (gleiche Herkunft) werden zusammengeführt: fehlende Übungen kommen dazu, nichts wird entfernt. So lassen sich Übungen und Trainings mit anderen Coaches austauschen.</li>
         <li><b>Alles ersetzen</b>: alle aktuellen Daten werden durch die Datei ersetzt; vorher wird ein Export angeboten.</li>
         <li><b>Als App installieren</b> (über die veröffentlichte Webadresse): iPad/iPhone in Safari «Teilen» → «Zum Home-Bildschirm»; Chrome/Edge über das Installieren-Symbol in der Adresszeile. Nach dem ersten Öffnen funktioniert die App auch ohne Internet. Die Daten bleiben pro Gerät; zum Übertragen Backup exportieren und auf dem anderen Gerät «Hinzufügen».</li>
@@ -63,6 +64,7 @@ const HELP = {
         <li>Status: <span className="status-badge draft">✎ Entwurf</span> = geplant, noch offen; <span className="status-badge final">✓ Definitiv</span> = festgelegt; <span className="status-badge template">▤ Vorlage</span> = Vorlage. Umschalten im Training.</li>
         <li><b>Vorlagen</b>: ein Training mit «Vorlage» markieren (z. B. typischer Ablauf Einwärmen → Posten → Spielform). Vorlagen stehen oben in eigenem Ordner und zählen nicht in der Auswertung. «Neues Training aus…» erstellt aus einer Vorlage oder einem früheren Training ein neues Training ohne Datum, als Entwurf. Mit «Ersetzen» lässt sich pro Eintrag eine andere Übung einsetzen; Dauer und Notizen bleiben.</li>
         <li><b>+ Übungen hinzufügen</b> öffnet Vorschläge: zuerst wählen, was trainiert werden soll (Erscheinungsform, optional ein Schlüsselelement), dann mit Altersklasse, Ort oder Stichwort eingrenzen. Eigene, fertige Übungen und solche mit diesem Hauptfokus stehen zuoberst. Mehrere Übungen nacheinander hinzufügen, dann «Fertig». <b>Ersetzen</b> öffnet dieselben Vorschläge, schon auf die Erscheinungsform der bisherigen Übung eingestellt.</li>
+        <li><b>▶ Training starten</b> (Eis-Modus, fürs iPad): zeigt eine Übung nach der anderen bildschirmfüllend mit Diagramm, Coaching-Punkten und Notizen, dazu einen Countdown mit der geplanten Dauer (rot, wenn überzogen) und die nächste Übung. Weiter mit ▶ / ◀, durch Wischen oder mit den Pfeiltasten. Ein Posten-Block läuft einmal pro Rotation, alle Posten nebeneinander. «Taktiktafel» öffnet die Tafel direkt im Eis-Modus. Der Bildschirm bleibt während des Trainings an.</li>
         <li><b>Start</b> (Uhrzeit) eintragen: jeder Eintrag zeigt dann seine Zeit, z. B. 17:07–17:47, auch auf dem Trainingsblatt.</li>
         <li><b>Posten-Block</b>: «Parallel (Posten)» bei einem Eintrag setzen, er gehört dann zum selben Block wie der vorherige. Die Gruppen rotieren durch alle Posten, darum zählt jeder Posten mit seiner vollen Dauer: 3 Posten à 12 Min. = 36 Min., also die Zeit, die jede Spielerin und jeder Spieler an jeder Übung verbringt. Auf dem Trainingsblatt stehen die Posten nebeneinander.</li>
         <li><b>Wechselzeit</b>: zwischen zwei Übungen bzw. Blöcken werden automatisch 2 Min. eingerechnet (in Zeiten und Total). Der Wechsel zwischen den Posten innerhalb eines Blocks zählt nicht extra.</li>
@@ -118,7 +120,8 @@ const HELP = {
       <ul>
         <li>Das Team startet mit 20 Platzhaltern (2 Torhüter/innen, 6 Verteidiger/innen, 12 Stürmer/innen) in den Gruppen Blau und Weiss. Namen, Nummern, Positionen und Gruppen direkt in der Tabelle ändern.</li>
         <li>Gruppen sind frei benennbar (z. B. für Posten oder Blau/Weiss) und erscheinen auf dem Trainingsblatt.</li>
-        <li>«Anwesend» zählt, in wie vielen Trainings mit erfasster Anwesenheit die Person dabei war.</li>
+        <li><b>Dossier</b> pro Spieler/in: Entwicklungsziele als Schlüsselelemente (antippen entfernt sie) und Notizen mit Datum, neueste zuoberst. Die Zahl hinter «Dossier» zeigt, wie viele Einträge es gibt. Das Dossier ist Teil des Backups.</li>
+        <li>«Anwesend» zählt, in wie vielen Trainings mit erfasster Anwesenheit die Person dabei war, mit Prozent. Mit <b>Von / Bis</b> nur einen Zeitraum auswerten (Trainings ohne Datum zählen dann nicht). «Nach Anwesenheit sortieren» zeigt die tiefsten Werte zuoberst.</li>
       </ul>
     ),
   },
@@ -130,6 +133,7 @@ const HELP = {
         <li>Mit Finger, Apple Pencil oder Maus zeichnen; Farbe Schwarz, Rot oder Blau wählen. Ein Tipp setzt einen Punkt.</li>
         <li><b>Radierer</b>: über Striche wischen, um sie zu entfernen. <b>Alles löschen</b> lässt sich mit «Rückgängig» zurückholen.</li>
         <li>Mit dem Apple Pencil: sobald der Stift benutzt wurde, zeichnen Finger nicht mehr (Handballen darf aufliegen).</li>
+        <li>Hochformat (iPad aufrecht): das Feld steht senkrecht und ist so etwa doppelt so gross. Gezeichnetes bleibt beim Drehen an derselben Stelle auf dem Feld.</li>
         <li><b>Vollbild</b>: die Tafel deckt den ganzen Bildschirm ab, nur eine Werkzeugleiste bleibt; am besten das iPad quer halten. «Vollbild beenden» führt zurück. Als App installiert (siehe Daten & Backup) verschwinden auch die Browserleisten ganz.</li>
       </ul>
     ),

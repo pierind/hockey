@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { emptyDb, addDays, coveredElements, toIcs, setSlot, removePlayer, gameTitle, dummyTeam, fillDates, migrateDb, newPlan, sessionsInWeek, addEntries, blocks, clock, needs, timeline, totalMinutes, categoryCollections, categoryMinutes, deleteDrill, fromTemplate, mergeDb, saveVariant, selectSessions, filterDrills, filterSessions, isoWeek, periodStats, drillProblems, duplicateDrill, migrateDrill, migrateDrills, moveIndex, rankDrills, newDrill, LOCAL_AUTHOR, upsertDrill, validateDb } from './model'
+import { emptyDb, addDays, coveredElements, toIcs, setSlot, removePlayer, gameTitle, dummyTeam, fillDates, migrateDb, newPlan, sessionsInWeek, addEntries, blocks, clock, needs, timeline, totalMinutes, categoryCollections, categoryMinutes, deleteDrill, fromTemplate, mergeDb, saveVariant, selectSessions, filterDrills, filterSessions, isoWeek, periodStats, drillProblems, duplicateDrill, migrateDrill, migrateDrills, moveIndex, rankDrills, runSteps, attendance, drillText, newDrill, LOCAL_AUTHOR, upsertDrill, validateDb } from './model'
 import { sihfPlan } from './sihf'
 import type { Db, Drill } from './types'
 
@@ -91,6 +91,28 @@ test('moveIndex reorders', () => {
 test('old Spielfeldbegrenzung lines open as Toblerones along the same line', () => {
   const old = drill({ scene: { rink: 'full', items: [{ id: 'b', kind: 'boundary', from: [10, 5], to: [10, 25] } as never] } })
   expect(migrateDrill(old).scene.items).toEqual([{ id: 'b', kind: 'toblerone', at: [10, 15], rot: 90 }])
+})
+
+test('attendance counts recorded trainings in the date range only', () => {
+  const s = { id: 's', title: 'T', entries: [] }
+  const list = [{ ...s, date: '2026-10-01', attendance: ['a', 'b'] }, { ...s, date: '2026-10-08', attendance: ['a'] },
+    { ...s, date: '2026-10-15' }, { ...s, attendance: ['b'] }, { ...s, date: '2026-10-09', template: true, attendance: ['a'] }]
+  const all = attendance(list)
+  expect([all.total, all.present('a'), all.present('b')]).toEqual([3, 2, 2]) // not recorded and templates do not count
+  const oct = attendance(list, '2026-10-05', '2026-10-31')
+  expect([oct.total, oct.present('a'), oct.present('b')]).toEqual([1, 1, 0]) // a range drops the undated one
+})
+
+test('drill text hides the import metadata paragraphs but keeps the content', () => {
+  const d = 'Zu zweit passen.\n\nNotes: Tempo hoch\n\nKategorie: Passing\n\nVideo: https://youtu.be/x\n\nhttps://example.org/a.pdf\n\nQuelle: Hockey Canada (https://x)\n\nGruppen: U9'
+  expect(drillText(d)).toBe('Zu zweit passen.\n\nNotes: Tempo hoch')
+  expect(drillText('Quelle: X')).toBe('')
+})
+
+test('rink mode runs single drills as one step and a Posten-Block once per rotation', () => {
+  const s = sample().sessions[0] // two 12-min entries; a third parallel to the second makes a block of 2 Posten
+  const steps = runSteps({ ...s, entries: [...s.entries, { ...s.entries[1], id: 'p', parallel: true }] })
+  expect(steps.map((x) => [x.entries.length, x.rotation, x.minutes])).toEqual([[1, 0, 12], [2, 1, 12], [2, 2, 12]])
 })
 
 test('drills without author get the coach, or the federation or site of their source', () => {
@@ -252,7 +274,9 @@ test('a week shows the trainings dated in it and the Schlüsselelemente they cov
 test('team and season plan survive a backup round trip and are checked on import', () => {
   const db = { ...sample(), players: dummyTeam(), plans: [newPlan('SIHF', true)] }
   db.sessions[0].attendance = [db.players[0].id]
+  db.players[0] = { ...db.players[0], goals: ['A04'], notes: [{ date: '2026-11-01', text: 'Pass gut abgefedert' }] }
   expect(roundTrip(db)).toEqual(db)
+  expect(() => roundTrip({ ...db, players: [{ ...db.players[0], goals: ['X99'] }] })).toThrow()
   expect(() => roundTrip({ ...db, sessions: [{ ...db.sessions[0], attendance: ['nobody'] }] })).toThrow()
   const bad = structuredClone(db.plans[0])
   bad.weeks[0].trainings = [['X99']]

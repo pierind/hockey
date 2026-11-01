@@ -1,6 +1,7 @@
+import { fromUpright, UPRIGHT } from './Rink'
 import { expect, test } from 'vitest'
 import { commit, initHistory, moveItem, redo, straighten, undo } from './scene'
-import type { Scene } from './types'
+import type { Pt, Scene } from './types'
 
 test('moveItem shifts every point of an item', () => {
   expect(moveItem({ id: 'r', kind: 'route', style: 'pass', from: [1, 1], to: [5, 1], ctrl: [3, 3] }, [1, 2])).toEqual({
@@ -31,4 +32,9 @@ test('straighten only straightens hand-drawn routes that are nearly straight', (
   expect(straighten(curved)).toBe(curved)
   const puck = { id: 'p', kind: 'puck' as const, at: [1, 1] as [number, number] }
   expect(straighten(puck)).toBe(puck)
+})
+
+test('the upright rink maps view points back to the same rink coordinates', () => {
+  const [a, b, c, d, e, f] = UPRIGHT.match(/-?\d+/g)!.map(Number)
+  for (const [x, y] of [[0, 0], [60, 30], [12.5, 7]] as Pt[]) expect(fromUpright([a * x + c * y + e, b * x + d * y + f])).toEqual([x, y])
 })

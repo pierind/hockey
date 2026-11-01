@@ -17,9 +17,18 @@ const BLUE = '#3b6fd4'
 const dots: [number, number][] = [4 + 6, 60 - 4 - 6].flatMap((x) => [[x, 8], [x, 22]] as [number, number][])
 const neutralDots: [number, number][] = [24, 36].flatMap((x) => [[x, 8], [x, 22]] as [number, number][])
 
-export function Rink({ template, children, style, ...props }: { template: RinkTemplate } & ComponentProps<'svg'>) {
+// Upright (portrait screens): the same rink coordinates, turned 90° clockwise. View point = (30 - y, x).
+export const UPRIGHT = 'matrix(0 1 -1 0 30 0)'
+export const fromUpright = ([vx, vy]: Pt): Pt => [vy, 30 - vx]
+const uprightView = (t: RinkTemplate) => {
+  const [x, y, w, h] = VIEW[t].split(' ').map(Number)
+  return `${30 - y - h} ${x} ${h} ${w}`
+}
+
+export function Rink({ template, upright, children, style, ...props }: { template: RinkTemplate; upright?: boolean } & ComponentProps<'svg'>) {
   return (
-    <svg viewBox={VIEW[template]} role="img" aria-label="Eisfeld" {...props} style={{ width: '100%', height: 'auto', background: '#fff', display: 'block', ...style }}>
+    <svg viewBox={upright ? uprightView(template) : VIEW[template]} role="img" aria-label="Eisfeld" {...props} style={{ width: '100%', height: 'auto', background: '#fff', display: 'block', ...style }}>
+      <g transform={upright ? UPRIGHT : undefined}>
       <g fill="none" strokeWidth={0.15}>
         <line x1={30} y1={0} x2={30} y2={30} stroke={RED} strokeWidth={0.3} />
         <line x1={22.5} y1={0} x2={22.5} y2={30} stroke={BLUE} strokeWidth={0.3} />
@@ -35,6 +44,7 @@ export function Rink({ template, children, style, ...props }: { template: RinkTe
       </g>
       <rect x={0} y={0} width={60} height={30} rx={8.5} fill="none" stroke="#222" strokeWidth={0.3} />
       {children}
+      </g>
     </svg>
   )
 }

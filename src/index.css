@@ -199,6 +199,29 @@ label.field input { color: var(--ink); }
 .session .entry > .row:first-child { border-bottom: 0; margin-bottom: 0; padding-bottom: 4px; }
 .session .entry-actions { margin: 0 0 10px 30px; gap: 2px; }
 
+/* Rink mode: the training runs full screen on the iPad, big picture, big timer, big buttons. */
+.run { position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; background: var(--ice); overscroll-behavior: none; }
+.run-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; background: var(--navy); color: #fff; border-bottom: 3px solid var(--red); }
+.run-bar button { min-height: 48px; min-width: 48px; font-size: 1.05rem; touch-action: manipulation; }
+.run-bar button.ghost { color: #fff; }
+.run-bar button.ghost:hover { background: var(--navy-2); color: #fff; }
+.run-pos { font-weight: 700; color: #c4d6ea; font-variant-numeric: tabular-nums; }
+.run-timer { font-size: 2.2rem; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 4.5ch; text-align: center; }
+.run-timer.over { color: #ff8a95; }
+.run-body { flex: 1; min-height: 0; overflow: auto; padding: 12px 16px; touch-action: pan-y; }
+.run-rotation { margin: 0 0 8px; font-weight: 700; color: var(--accent-ink); }
+.run-drills { display: grid; gap: 14px; }
+.run-drills.posten { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+.run-drill { display: grid; grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr); gap: 16px; align-items: start; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow); }
+.run-drills.posten .run-drill { grid-template-columns: 1fr; }
+.run-drill > svg, .run-drill > .drill-image, .run-drill > .office-thumb { width: 100%; max-height: 62dvh; object-fit: contain; }
+.run-drill h2 { font-size: 1.5rem; margin: 0 0 8px; }
+.run-drill li { font-size: 1.1rem; margin-bottom: 6px; }
+.run-note { background: #fff8e1; border-left: 4px solid #fab219; padding: 8px 12px; border-radius: 6px; font-size: 1.05rem; }
+.run-next { margin: 0; padding: 10px 16px; background: var(--surface); border-top: 1px solid var(--line); color: var(--muted); font-weight: 600; }
+.run-board { flex: 1; min-height: 0; overflow: auto; padding: 8px 12px; }
+@media (max-width: 900px), (orientation: portrait) { .run-drill { grid-template-columns: 1fr; } }
+
 /* Drill finder dialog */
 .finder { box-sizing: border-box; width: min(1100px, 94vw); max-height: 90vh; border: 0; border-radius: 16px; padding: 0 24px 24px; box-shadow: 0 20px 50px rgb(10 35 66 / 0.3); color: var(--ink); background: var(--ice); }
 .finder::backdrop { background: rgb(10 35 66 / 0.45); }

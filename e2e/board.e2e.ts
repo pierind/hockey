@@ -52,3 +52,19 @@ test('coaches board: draw, erase, undo, keep after reload', async ({ page }) => 
   await page.getByRole('button', { name: 'Taktiktafel' }).click()
   await expect(page.getByRole('application').locator('polyline')).toHaveCount(2)
 })
+
+test('portrait iPad: the rink stands upright and strokes keep rink coordinates', async ({ page }) => {
+  await page.setViewportSize({ width: 820, height: 1180 })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Taktiktafel' }).click()
+  const board = page.getByRole('application')
+  await expect(board).toHaveAttribute('viewBox', '-1 -1 32 62')
+  const box = (await board.boundingBox())!
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.1) // near the top end = rink x small
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.2, { steps: 5 })
+  await page.mouse.up()
+  const [x, y] = (await board.locator('polyline').getAttribute('points'))!.split(' ')[0].split(',').map(Number)
+  expect(x).toBeLessThan(10)
+  expect(Math.abs(y - 15)).toBeLessThan(2) // middle of the width = rink centre line
+})

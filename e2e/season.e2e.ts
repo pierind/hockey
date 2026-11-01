@@ -9,6 +9,16 @@ test('season plan and team', async ({ page }) => {
   await page.getByLabel('Name Spieler/in 1', { exact: true }).fill('Lia Muster')
   await page.getByLabel('Name Spieler/in 1', { exact: true }).blur()
   await expect(page.getByLabel('Name Lia Muster')).toHaveValue('Lia Muster')
+  // Dossier: a development goal and a dated note
+  await page.locator('table.team tbody tr').first().getByRole('button', { name: 'Dossier' }).click()
+  const dossier = page.getByRole('dialog', { name: 'Dossier Lia Muster' })
+  await dossier.getByLabel('Entwicklungsziel hinzufügen').selectOption('A04')
+  await dossier.getByLabel('Neue Notiz').fill('Pass sauber abgefedert')
+  await dossier.getByRole('button', { name: 'Notiz hinzufügen' }).click()
+  await expect(dossier.getByText('Pass sauber abgefedert')).toBeVisible()
+  await expect(dossier.getByRole('button', { name: /Ziel A04 .* entfernen/ })).toBeVisible()
+  await dossier.getByRole('button', { name: 'Fertig' }).click()
+  await expect(page.locator('table.team tbody tr').first().getByRole('button', { name: 'Dossier (2)' })).toBeVisible()
 
   await page.getByRole('button', { name: 'Saisonplan' }).click()
   await page.getByRole('button', { name: 'SIHF-Beispiel übernehmen' }).click()

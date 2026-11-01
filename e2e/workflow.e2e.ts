@@ -71,6 +71,18 @@ test('coach workflow', async ({ page }) => {
   await expect(page.getByText('Total: 26 Min. · 17:00–17:26')).toBeVisible()
   await page.getByLabel('Parallel (Posten)').check()
   await expect(page.getByText('Total: 24 Min. · 17:00–17:24')).toBeVisible()
+  // Rink mode: the Posten-Block runs once per rotation, 12 min each
+  await page.getByRole('button', { name: '▶ Training starten' }).click()
+  const run = page.getByRole('dialog', { name: 'Training läuft: Neues Training' })
+  await expect(run.getByText('Rotation 1 von 2', { exact: false }).first()).toBeVisible()
+  await expect(run.getByText('Danach: Wechsel, Rotation 2 von 2 (12 Min.)')).toBeVisible()
+  await expect(run.getByRole('timer')).toHaveText(/^1[12]:\d\d$/)
+  await run.getByRole('button', { name: 'Nächste Übung' }).click()
+  await expect(run.getByText('Rotation 2 von 2')).toBeVisible()
+  await run.getByRole('button', { name: 'Taktiktafel' }).click()
+  await expect(run.getByRole('application')).toBeVisible()
+  await run.getByRole('button', { name: '✕ Beenden' }).click()
+  await expect(run).toHaveCount(0)
   // Attendance: record, mark one player absent
   await page.locator('summary', { hasText: 'Anwesenheit (AWK)' }).click()
   await page.getByRole('button', { name: 'Anwesenheit erfassen (alle anwesend)' }).click()
@@ -97,4 +109,12 @@ test('coach workflow', async ({ page }) => {
   await page.locator('input[type=file]').setInputFiles(file)
   await page.getByRole('button', { name: 'Hinzufügen', exact: true }).click()
   await expect(page.getByText('0 Übungen, 0 Sammlungen, 0 Trainings, 0 Spiele hinzugefügt; 23 bereits vorhanden.')).toBeVisible()
+
+  // Team: attendance rate per player; sorting by attendance puts the absent player first
+  await page.getByRole('navigation').getByRole('button', { name: 'Team' }).click()
+  await page.getByLabel('Nach Anwesenheit sortieren').check()
+  const first = page.locator('table.team tbody tr').first()
+  await expect(first.getByLabel(/^Name /)).toHaveValue('Spieler/in 3')
+  await expect(first).toContainText('0 / 1 · 0 %')
+  await expect(page.locator('table.team tbody tr').nth(1)).toContainText('1 / 1 · 100 %')
 })

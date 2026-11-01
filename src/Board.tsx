@@ -2,7 +2,7 @@ import { memo, useEffect, useRef, useState } from 'react'
 import type { PointerEvent } from 'react'
 import { load, store } from './db'
 import { HelpButton } from './Help'
-import { Rink } from './Rink'
+import { fromUpright, Rink } from './Rink'
 import { commit, dist, initHistory, redo, undo } from './scene'
 import type { Pt, RinkTemplate } from './types'
 
@@ -32,6 +32,13 @@ export function Board() {
   const [color, setColor] = useState(COLORS[0][0])
   const [loaded, setLoaded] = useState(false)
   const [full, setFull] = useState(false) // board covers the whole screen, app bar hidden
+  const [upright, setUpright] = useState(() => matchMedia('(orientation: portrait)').matches) // portrait iPad: rink turned upright, twice as big
+  useEffect(() => {
+    const m = matchMedia('(orientation: portrait)')
+    const on = () => setUpright(m.matches)
+    m.addEventListener('change', on)
+    return () => m.removeEventListener('change', on)
+  }, [])
   const svg = useRef<SVGSVGElement>(null)
   const gesture = useRef<{ pointerId: number; stroke?: Stroke } | null>(null)
   const penUsed = useRef(false) // palm rejection: after the first Apple Pencil touch, fingers no longer draw
@@ -47,7 +54,8 @@ export function Board() {
 
   function toRink(e: { clientX: number; clientY: number }): Pt {
     const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(svg.current!.getScreenCTM()!.inverse())
-    return [Math.round(p.x * 100) / 100, Math.round(p.y * 100) / 100]
+    const [x, y] = upright ? fromUpright([p.x, p.y]) : [p.x, p.y]
+    return [Math.round(x * 100) / 100, Math.round(y * 100) / 100]
   }
 
   function onPointerDown(e: PointerEvent<SVGSVGElement>) {
@@ -117,7 +125,7 @@ export function Board() {
         <button className={full ? 'primary' : ''} onClick={toggleFull}>{full ? 'Vollbild beenden' : 'Vollbild'}</button>
       </div>
       <div className="board-canvas">
-        <Rink ref={svg} template={board.rink} style={full ? { height: '100%' } : undefined} role="application" aria-label="Taktiktafel: mit Finger, Stift oder Maus zeichnen"
+        <Rink ref={svg} template={board.rink} upright={upright} style={full ? { height: '100%' } : undefined} role="application" aria-label="Taktiktafel: mit Finger, Stift oder Maus zeichnen"
           onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel}>
           {board.strokes.map((s, i) => <StrokeLine key={i} s={s} />)}
         </Rink>

@@ -52,6 +52,13 @@ export function setSlot(lineup: Record<string, string>, slot: string, player: st
   const next = Object.fromEntries(Object.entries(lineup).filter(([k, v]) => k !== slot && v !== player))
   return player ? { ...next, [slot]: player } : next
 }
+// Attendance per player over the trainings with recorded AWK, optionally within a date range (inclusive; a range drops undated trainings).
+export function attendance(sessions: Session[], from = '', to = '') {
+  const recorded = sessions.filter((s) => s.attendance && !s.template && (!(from || to) || (s.date && (!from || s.date >= from) && (!to || s.date <= to))))
+  const present = (id: string) => recorded.filter((s) => s.attendance!.includes(id)).length
+  return { total: recorded.length, present }
+}
+
 // Removes a player from the team, every attendance list and every line-up.
 export const removePlayer = (db: Db, id: string): Db => ({
   ...db,
@@ -257,6 +264,14 @@ export function timeline(s: Session) {
   })
 }
 export const totalMinutes = (s: Session) => timeline(s).at(-1)?.to ?? 0
+// Drill text for reading: without the metadata paragraphs the import scripts append (source, groups, age, links); the editor keeps them.
+const META = /^(Quelle|Gruppen|Kategorie|Category|Alter|Posted by|Video|Animation|Drill PDF|Übung PDF):|^https?:\/\/\S+$/
+export const drillText = (description: string) => description.split('\n\n').filter((p) => !META.test(p.trim())).join('\n\n').trim()
+
+// Rink mode steps: a single drill is one step; a Posten-Block is one step per rotation, all Posten shown together,
+// each rotation getting an equal share of the block so the run takes as long as the plan.
+export const runSteps = (s: Session) =>
+  blocks(s).flatMap((entries) => entries.map((_, r) => ({ entries, rotation: entries.length > 1 ? r + 1 : 0, minutes: blockMinutes(entries) / entries.length })))
 // 'HH:MM' plus minutes, wrapping at midnight.
 export function clock(start: string, minutes: number) {
   const [h, m] = start.split(':').map(Number)
@@ -436,7 +451,8 @@ export function validateDb(x: unknown): Db {
   need(opt(x.players, Array.isArray) && opt(x.plans, Array.isArray), 'Backup unvollständig')
   const players = (x.players ?? []) as unknown[]
   players.forEach((p, i) =>
-    need(isObj(p) && isStr(p.id) && isStr(p.name) && opt(p.number, isNum) && ['F', 'D', 'G'].includes(p.position as string) && opt(p.group, isStr), `Spieler/in ${i + 1}: Felder fehlen`))
+    need(isObj(p) && isStr(p.id) && isStr(p.name) && opt(p.number, isNum) && ['F', 'D', 'G'].includes(p.position as string) && opt(p.group, isStr)
+      && opt(p.goals, (g) => strs(g) && g.every((e) => ELEMENT_IDS.has(e))) && opt(p.notes, (n) => Array.isArray(n) && n.every((x) => isObj(x) && isStr(x.date) && isStr(x.text))), `Spieler/in ${i + 1}: Felder fehlen`))
   const playerIds = new Set(players.map((p) => (p as Obj).id))
   x.sessions.forEach((s: Obj, i) => need(opt(s.attendance, (a) => strs(a) && a.every((id) => playerIds.has(id))), `Training ${i + 1}: Anwesenheit verweist auf unbekannte Spieler/in`))
   need(opt(x.games, Array.isArray), 'Backup unvollständig')

@@ -4,6 +4,7 @@ import { HelpButton } from './Help'
 import { CategoryFilter, DrillFinder, DrillSummary } from './Library'
 import { addEntries, blockMinutes, categoryCollections, clock, duplicateSession, filterSessions, fromTemplate, groupPlayers, monthKey, monthLabel, moveIndex, needs, timeline, toIcs, totalMinutes } from './model'
 import type { Change } from './model'
+import { RunMode } from './RunMode'
 import { uid } from './scene'
 import type { Db, Drill, Session, SessionEntry } from './types'
 
@@ -93,6 +94,7 @@ export function Sessions({ db, change, onEditEntry }: { db: Db; change: Change; 
 function SessionEditor({ s, db, upd, onBack, onEdit }: { s: Session; db: Db; upd: (fn: (s: Session) => Session) => void; onBack: () => void; onEdit: (e: SessionEntry) => void }) {
   const [invalid, setInvalid] = useState<string[]>([]) // entries whose typed duration was rejected
   const [dragFrom, setDragFrom] = useState<number | null>(null)
+  const [run, setRun] = useState(false) // rink mode open
   const [finder, setFinder] = useState<{ replace?: string; category?: string } | null>(null) // open drill finder: add, or replace that entry
   const setEntry = (id: string, patch: Partial<SessionEntry>) => upd((s) => ({ ...s, entries: s.entries.map((e) => (e.id === id ? { ...e, ...patch } : e)) }))
   const move = (from: number, to: number) => upd((s) => ({ ...s, entries: moveIndex(s.entries, from, to) }))
@@ -112,6 +114,7 @@ function SessionEditor({ s, db, upd, onBack, onEdit }: { s: Session; db: Db; upd
           <span className="spacer" />
           <HelpButton topic="sessions" />
           <button onClick={() => print()}>Drucken / PDF</button>
+          <button className="primary" disabled={!s.entries.length} onClick={() => setRun(true)}>▶ Training starten</button>
         </div>
         <header className="session-head">
           <input className="title-input" aria-label="Titel" defaultValue={s.title} onBlur={(e) => {
@@ -247,6 +250,7 @@ function SessionEditor({ s, db, upd, onBack, onEdit }: { s: Session; db: Db; upd
           })}
         </ol>
       </section>
+      {run && <RunMode s={s} onClose={() => setRun(false)} />}
       {finder && (
         <DrillFinder drills={db.drills} category={finder.category} inSession={s.entries.map((e) => e.drill.id)}
           {...(finder.replace

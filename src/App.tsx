@@ -72,10 +72,17 @@ export function App() {
     download(`eishockey-backup-${new Date().toISOString().slice(0, 10)}.json`, 'application/json', JSON.stringify(current.current, null, 2))
   }
 
-  async function importBackup(file: File) {
+  // Several files (e.g. all drill sources) are joined into one import; validating the joined data rejects ids that appear twice.
+  async function importBackup(files: File[]) {
     let next: Db
     try {
-      next = migrateDrills(validateDb(JSON.parse(await file.text()))) // same as the stored drills, or merging copies every unchanged one
+      const dbs = await Promise.all(files.map(async (f) => {
+        try { return validateDb(JSON.parse(await f.text())) } catch (e) { throw new Error(`${f.name}: ${(e as Error).message}`) }
+      }))
+      const join = <T,>(pick: (d: Db) => T[] | undefined) => (dbs.some(pick) ? dbs.flatMap((d) => pick(d) ?? []) : undefined)
+      const all = dbs.length === 1 ? dbs[0] : validateDb(JSON.parse(JSON.stringify({ version: 1, drills: join((d) => d.drills), collections: join((d) => d.collections),
+        sessions: join((d) => d.sessions), players: join((d) => d.players), plans: join((d) => d.plans), games: join((d) => d.games) })))
+      next = migrateDrills(all) // same as the stored drills, or merging copies every unchanged one
     } catch (e) {
       setStatus(`Import abgelehnt, nichts geändert: ${(e as Error).message}`)
       return
@@ -127,10 +134,10 @@ export function App() {
             <button onClick={exportBackup}>Backup exportieren</button>
             <button onClick={() => fileInput.current?.click()}>Backup importieren</button>
             <HelpButton topic="data" />
-            <input ref={fileInput} type="file" accept="application/json,.json" hidden onChange={(e) => {
-              const f = e.target.files?.[0]
+            <input ref={fileInput} type="file" accept="application/json,.json" multiple hidden onChange={(e) => {
+              const files = [...(e.target.files ?? [])]
               e.target.value = ''
-              if (f) importBackup(f)
+              if (files.length) importBackup(files)
             }} />
           </div>
         </div>
@@ -141,7 +148,7 @@ export function App() {
           {pending && (
             <>
               <h3>Backup importieren</h3>
-              <p>Die Datei enthält {pending.drills.length} Übungen, {pending.collections.length} Sammlungen, {pending.sessions.length} Trainings und {(pending.games ?? []).length} Spiele.</p>
+              <p>Der Import enthält {pending.drills.length} Übungen, {pending.collections.length} Sammlungen, {pending.sessions.length} Trainings und {(pending.games ?? []).length} Spiele.</p>
               <div className="row">
                 <button className="primary" onClick={() => applyImport('merge')}>Hinzufügen</button>
                 <button onClick={() => applyImport('replace')}>Alles ersetzen</button>
