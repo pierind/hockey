@@ -179,6 +179,7 @@ label.check { display: flex; gap: 8px; align-items: baseline; font-size: 0.88rem
 
 /* Training editor, pilot of the cleaner look: one header card, quiet secondary buttons, numbered entries. */
 button.ghost { background: transparent; border-color: transparent; }
+button.icon-btn { display: inline-flex; align-items: center; justify-content: center; padding: 7px; line-height: 0; }
 button.ghost:hover { background: var(--accent-soft); border-color: transparent; color: var(--accent-ink); }
 button.danger { color: var(--danger); }
 button.danger:hover { background: #fdecea; color: var(--danger); }
@@ -255,6 +256,22 @@ label.field input { color: var(--ink); }
 .help-button { width: 24px; height: 24px; padding: 0; border-radius: 50%; font-size: 0.78rem; font-weight: 700; line-height: 1; color: var(--muted); }
 .help-button:hover { color: var(--accent-ink); border-color: var(--accent); }
 .app-actions .help-button { color: #fff; }
+/* Teams: the switch in the app bar and coloured name chips (--team set inline per team) */
+.team-switch { display: inline-flex; align-items: center; gap: 6px; }
+.team-switch::before { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--team); box-shadow: 0 0 0 2px rgb(255 255 255 / 0.6); }
+.team-switch select { background: transparent; color: #fff; border: 1px solid rgb(255 255 255 / 0.35); border-radius: 8px; padding: 6px 8px; font-weight: 600; max-width: 180px; }
+.team-switch option { color: var(--ink); }
+.team-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 0.78rem; font-weight: 600; color: var(--navy); white-space: nowrap; }
+.team-chip::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--team); }
+.team-pick { margin-top: 6px; }
+.player-teams { white-space: nowrap; }
+.player-teams .check { margin-right: 10px; }
+.team .player-teams input { width: auto; min-width: 0; }
+.team-chips { display: inline-flex; gap: 10px; }
+.list li.row > span.team-chips { margin-right: 0; }
+.team-head { margin-bottom: 4px; }
+.team-head .title-input { max-width: 320px; }
+.team-head input[type='color'] { width: 40px; height: 34px; padding: 2px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
 .help-dialog { max-width: 640px; border: 0; border-radius: 14px; padding: 20px 24px; box-shadow: 0 20px 50px rgb(10 35 66 / 0.3); color: var(--ink); }
 .help-dialog::backdrop { background: rgb(10 35 66 / 0.4); }
 .help-dialog h3 { margin-top: 0; }
@@ -327,6 +344,8 @@ input.short { width: 110px; }
 section > .roster { margin: 10px 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
+.posten-map { max-width: 420px; margin: 8px 0; }
+.posten-map svg { border: 1px solid var(--line); border-radius: 8px; }
 .print-only { display: none; }
 .lineup { border-collapse: collapse; width: 100%; margin: 8px 0; }
 .lineup th, .lineup td { border: 1px solid #999; padding: 6px 8px; text-align: left; }
@@ -347,11 +366,37 @@ section > .roster { margin: 10px 0; }
   .session .entry-actions { margin-left: 0; }
 }
 @media print {
-  :root, body { background: #fff; }
+  @page { size: A4; margin: 12mm; }
+  :root, body { background: #fff; font-size: 9pt; }
+  * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   main { padding: 0; }
   .screen-only { display: none !important; }
   .print-only { display: block; }
-  article { break-inside: avoid; border-bottom: 1px solid #999; padding-bottom: 8px; }
-  .summary { grid-template-columns: 300px 1fr; }
-  .summary svg { border-color: #999; }
+
+  /* Training sheet: one card per drill, never split over two pages */
+  .sheet-head { border-bottom: 3px solid var(--red); padding-bottom: 8px; margin-bottom: 14px; }
+  .sheet-head h1 { font-size: 16pt; color: var(--navy); }
+  .sheet-head p { margin: 3px 0 0; color: var(--muted); }
+  .sheet-head .sheet-teams { margin: 0 0 2px; color: var(--accent); font-size: 7.5pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+  .sheet-head small { font-size: 7.5pt; }
+  .sheet-drill, .sheet-block { border: 1px solid var(--line); border-radius: 10px; margin: 0 0 10px; }
+  .sheet-drill { break-inside: avoid; overflow: hidden; }
+  .sheet-block > .sheet-title { border-radius: 9px 9px 0 0; break-after: avoid; }
+  .sheet-block > .posten-map { max-width: 11cm; margin: 8px auto 0; break-inside: avoid; break-after: avoid; }
+  .sheet-posten { display: flex; gap: 8px; padding: 8px 8px 0; break-inside: avoid; }
+  .sheet-posten:last-child { padding-bottom: 8px; }
+  .sheet-posten .sheet-drill { flex: 1 1 0; min-width: 0; margin: 0; }
+  .sheet-posten .sheet-drill:only-child { flex: 0 0 calc(50% - 4px); }
+  .sheet-posten .sheet-drill .sheet-title { background: var(--accent-soft); color: var(--navy); font-size: 9pt; }
+  .sheet-posten .sheet-body { grid-template-columns: 1fr; }
+  .sheet-title { display: flex; align-items: baseline; gap: 10px; margin: 0; padding: 5px 10px; background: var(--navy); color: #fff; font-size: 10pt; font-weight: 700; }
+  .sheet-time { font-variant-numeric: tabular-nums; font-weight: 600; opacity: 0.85; }
+  .sheet-min { margin-left: auto; white-space: nowrap; font-weight: 600; }
+  .sheet-body { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 12px; padding: 8px 10px 10px; align-items: start; }
+  .sheet-body > svg, .sheet-body > .drill-image, .sheet-body > .office-thumb { width: 100%; max-height: 9cm; object-fit: contain; break-inside: avoid; border: 1px solid var(--line); border-radius: 8px; box-sizing: border-box; }
+  .sheet-body h4 { margin: 8px 0 2px; color: var(--accent); font-size: 6.5pt; text-transform: uppercase; letter-spacing: 0.08em; }
+  .sheet-body h4:first-child { margin-top: 0; }
+  .sheet-body p { margin: 0 0 4px; }
+  .sheet-body ul { margin: 0; padding-left: 16px; }
+  .sheet-need { color: var(--muted); font-size: 7.5pt; }
 }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { Board } from './Board'
 import { Collections } from './Collections'
 import { Dashboard } from './Dashboard'
@@ -7,7 +8,7 @@ import { Editor } from './Editor'
 import { Games } from './Games'
 import { Help, HelpButton } from './Help'
 import { Library } from './Library'
-import { emptyDb, mergeDb, migrateDb, migrateDrill, migrateDrills, saveVariant, upsertDrill, validateDb } from './model'
+import { claimNew, emptyDb, mergeDb, migrateDb, migrateDrill, migrateDrills, saveVariant, teamView, upsertDrill, validateDb } from './model'
 import { uid } from './scene'
 import type { Change } from './model'
 import { Season } from './Season'
@@ -30,6 +31,12 @@ export function App() {
   const fileInput = useRef<HTMLInputElement>(null)
   const [pending, setPending] = useState<Db | null>(null) // validated backup waiting for «Hinzufügen» or «Ersetzen»
   const importDialog = useRef<HTMLDialogElement>(null)
+  // Active team: a per-device convenience, so it lives in localStorage (may be unavailable, e.g. private mode).
+  const [teamId, setTeamId] = useState(() => { try { return localStorage.getItem('hockey-team') ?? '' } catch { return '' } })
+  const pickTeam = (id: string) => {
+    setTeamId(id)
+    try { localStorage.setItem('hockey-team', id) } catch { /* not remembered */ }
+  }
   useEffect(() => {
     if (pending) importDialog.current?.showModal()
   }, [pending])
@@ -96,11 +103,13 @@ export function App() {
     if (mode === 'replace') {
       if (!confirm('Alle aktuellen Daten werden ersetzt. Fortfahren?')) return
       if (confirm('Vorher die aktuellen Daten als Backup exportieren?')) exportBackup()
-      change(() => next).catch(() => {})
+      change(() => migrateDb(next)).catch(() => {})
       return
     }
     const r = mergeDb(current.current, next)
-    change(() => r.db).then(
+    const teams = current.current.teams ?? []
+    // Imported records without a team (older backups) go to the active team.
+    change((d) => claimNew(d, r.db, (teams.find((t) => t.id === teamId) ?? teams[0]).id)).then(
       () => setStatus(`Import: ${r.added.drills} Übungen, ${r.added.collections} Sammlungen, ${r.added.sessions} Trainings, ${r.added.games} Spiele hinzugefügt; ${r.skipped} bereits vorhanden.`),
       () => {},
     )
@@ -108,6 +117,11 @@ export function App() {
 
   if (!db) return <main><p role="status">{status || 'Lädt…'}</p></main>
 
+  const teams = db.teams ?? []
+  const team = teams.find((t) => t.id === teamId) ?? teams[0]
+  const view = teamView(db, team.id)
+  // Pages see the active team; what they create is assigned to it.
+  const teamChange: Change = (fn) => change((d) => claimNew(d, fn(d), team.id))
   const variant = editing?.variant
   return (
     <>
@@ -131,8 +145,18 @@ export function App() {
             {TABS.map(([t, label]) => <button key={t} aria-current={tab === t ? 'page' : undefined} onClick={() => setTab(t)}>{label}</button>)}
           </nav>
           <div className="app-actions">
-            <button onClick={exportBackup}>Backup exportieren</button>
-            <button onClick={() => fileInput.current?.click()}>Backup importieren</button>
+            <label className="team-switch" style={{ '--team': team.color } as CSSProperties}>
+              <span className="sr-only">Aktives Team</span>
+              <select value={team.id} onChange={(e) => pickTeam(e.target.value)}>
+                {teams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+            </label>
+            <button className="icon-btn" aria-label="Backup exportieren" title="Backup exportieren" onClick={exportBackup}>
+              <svg viewBox="0 0 24 24" width={20} height={20} aria-hidden fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M12 4v11M7 10l5 5 5-5M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2" /></svg>
+            </button>
+            <button className="icon-btn" aria-label="Backup importieren" title="Backup importieren" onClick={() => fileInput.current?.click()}>
+              <svg viewBox="0 0 24 24" width={20} height={20} aria-hidden fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M12 15V4M7 9l5-5 5 5M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2" /></svg>
+            </button>
             <HelpButton topic="data" />
             <input ref={fileInput} type="file" accept="application/json,.json" multiple hidden onChange={(e) => {
               const files = [...(e.target.files ?? [])]
@@ -161,14 +185,14 @@ export function App() {
       <div className="screen-only">
         {tab === 'library' && <Library db={db} change={change} onEdit={(drill) => setEditing({ drill })} />}
         {tab === 'collections' && <Collections db={db} change={change} onEdit={(drill) => setEditing({ drill })} />}
-        {tab === 'dashboard' && <Dashboard db={db} />}
-        {tab === 'season' && <Season db={db} change={change} />}
-        {tab === 'team' && <Team db={db} change={change} />}
+        {tab === 'dashboard' && <Dashboard db={view} />}
+        {tab === 'season' && <Season db={view} change={teamChange} />}
+        {tab === 'team' && <Team db={view} all={db} team={team} change={teamChange} onTeam={pickTeam} />}
         {tab === 'board' && <Board />}
         {tab === 'help' && <Help />}
       </div>
-      {tab === 'games' && <Games db={db} change={change} />}
-      {tab === 'sessions' && <Sessions db={db} change={change} onEditEntry={(sessionId, e) => setEditing({ drill: { ...structuredClone(e.drill), id: uid() }, variant: { sessionId, entryId: e.id, title: e.drill.title } })} />}
+      {tab === 'games' && <Games db={view} change={teamChange} />}
+      {tab === 'sessions' && <Sessions db={view} players={db.players ?? []} team={team.id} change={teamChange} onEditEntry={(sessionId, e) => setEditing({ drill: { ...structuredClone(e.drill), id: uid() }, variant: { sessionId, entryId: e.id, title: e.drill.title } })} />}
       </main>
       </div>
     </>

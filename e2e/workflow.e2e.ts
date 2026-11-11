@@ -59,7 +59,7 @@ test('coach workflow', async ({ page }) => {
   // Training with start time; the same drill twice, first in a row (2 min changeover), then as a Posten-Block
   await page.getByRole('button', { name: 'Trainings' }).click()
   await page.getByRole('button', { name: 'Neues Training' }).click()
-  await page.getByLabel('Start').fill('17:00')
+  await page.getByLabel('Start', { exact: true }).fill('17:00')
   // Finder: pick the goal (Erscheinungsform), then add the suggestion twice without closing the dialog
   await page.getByRole('button', { name: '+ Übungen hinzufügen' }).first().click()
   const finder = page.getByRole('dialog', { name: 'Übungen hinzufügen' })
@@ -72,7 +72,7 @@ test('coach workflow', async ({ page }) => {
   await page.getByLabel('Parallel (Posten)').check()
   await expect(page.getByText('Total: 24 Min. · 17:00–17:24')).toBeVisible()
   // Rink mode: the Posten-Block runs once per rotation, 12 min each
-  await page.getByRole('button', { name: '▶ Training starten' }).click()
+  await page.getByRole('button', { name: 'Training starten' }).click()
   const run = page.getByRole('dialog', { name: 'Training läuft: Neues Training' })
   await expect(run.getByText('Rotation 1 von 2', { exact: false }).first()).toBeVisible()
   await expect(run.getByText('Danach: Wechsel, Rotation 2 von 2 (12 Min.)')).toBeVisible()
@@ -88,16 +88,21 @@ test('coach workflow', async ({ page }) => {
   await page.getByRole('button', { name: 'Anwesenheit erfassen (alle anwesend)' }).click()
   await page.getByLabel('3 Spieler/in 3 (D)').uncheck()
   await expect(page.getByText('Anwesenheit (AWK): 19 von 20')).toBeVisible()
-  await expect(page.getByText('Benötigt: 8 Spieler/innen')).toBeVisible()
+  await expect(page.getByText('Benötigt: 8 Spieler/innen').first()).toBeVisible() // the hidden sheet repeats it
   await page.getByRole('button', { name: 'Als definitiv markieren' }).click()
+
+  // Print button: the training title becomes the page title, which the browser proposes as the PDF file name
+  await page.evaluate(() => { window.print = () => { (window as unknown as { printed: string }).printed = document.title } })
+  await page.getByRole('button', { name: 'Drucken / PDF' }).click()
+  expect(await page.evaluate(() => (window as unknown as { printed: string }).printed)).toBe('Neues Training')
 
   // Print view shows the sheet with the block and the legend
   await page.emulateMedia({ media: 'print' })
   await expect(page.getByRole('heading', { name: 'Neues Training', level: 1 })).toBeVisible()
-  await expect(page.getByText('1. Posten-Block · 2 Posten · 24 Min.')).toBeVisible()
   const sheet = page.locator('.print-only')
-  await expect(sheet).toContainText('Blau: 1 Spieler/in 1 (G), 5 Spieler/in 5 (D)') // groups of present players…
-  await expect(sheet).not.toContainText('Spieler/in 3 (D)') // …without the absent one
+  await expect(sheet.getByRole('heading', { name: '1. Posten-Block · 2 Posten 24 Min.' })).toBeVisible()
+  await expect(sheet.getByRole('heading', { name: 'Coaching-Punkte' }).first()).toBeVisible()
+  await expect(sheet).not.toContainText('Spieler/in 1 (G)') // no attendance list for the assistant coaches
   await expect(sheet.getByRole('list', { name: 'Legende' })).toHaveCount(0) // no symbol legend on the sheet
   await page.emulateMedia({ media: 'screen' })
 

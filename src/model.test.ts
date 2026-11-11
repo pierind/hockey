@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { emptyDb, addDays, coveredElements, toIcs, setSlot, removePlayer, gameTitle, dummyTeam, fillDates, migrateDb, newPlan, sessionsInWeek, addEntries, blocks, clock, needs, timeline, totalMinutes, categoryCollections, categoryMinutes, deleteDrill, fromTemplate, mergeDb, saveVariant, selectSessions, filterDrills, filterSessions, isoWeek, periodStats, drillProblems, duplicateDrill, migrateDrill, migrateDrills, moveIndex, rankDrills, runSteps, attendance, drillText, newDrill, LOCAL_AUTHOR, upsertDrill, validateDb } from './model'
+import { emptyDb, addDays, coveredElements, toIcs, setSlot, removePlayer, gameTitle, dummyTeam, fillDates, migrateDb, newPlan, sessionsInWeek, addEntries, blocks, clock, needs, timeline, totalMinutes, categoryCollections, categoryMinutes, deleteDrill, fromTemplate, mergeDb, saveVariant, selectSessions, filterDrills, filterSessions, isoWeek, periodStats, drillProblems, duplicateDrill, migrateDrill, migrateDrills, moveIndex, rankDrills, runSteps, attendance, drillSections, postenZones, drillText, newDrill, claimNew, teamView, removeTeam, teamOnly, LOCAL_AUTHOR, upsertDrill, validateDb } from './model'
 import { sihfPlan } from './sihf'
 import type { Db, Drill } from './types'
 
@@ -107,6 +107,11 @@ test('drill text hides the import metadata paragraphs but keeps the content', ()
   const d = 'Zu zweit passen.\n\nNotes: Tempo hoch\n\nKategorie: Passing\n\nVideo: https://youtu.be/x\n\nhttps://example.org/a.pdf\n\nQuelle: Hockey Canada (https://x)\n\nGruppen: U9'
   expect(drillText(d)).toBe('Zu zweit passen.\n\nNotes: Tempo hoch')
   expect(drillText('Quelle: X')).toBe('')
+})
+
+test('training sheet splits the notes paragraphs off the description', () => {
+  expect(drillSections('Zu zweit passen.\n\nNotes: Tempo hoch\n\nNOTE: Kopf hoch\n\nQuelle: X')).toEqual({ text: 'Zu zweit passen.', notes: ['Tempo hoch', 'Kopf hoch'] })
+  expect(drillSections('')).toEqual({ text: '', notes: [] })
 })
 
 test('rink mode runs single drills as one step and a Posten-Block once per rotation', () => {
@@ -276,11 +281,11 @@ test('team and season plan survive a backup round trip and are checked on import
   db.sessions[0].attendance = [db.players[0].id]
   db.players[0] = { ...db.players[0], goals: ['A04'], notes: [{ date: '2026-11-01', text: 'Pass gut abgefedert' }] }
   expect(roundTrip(db)).toEqual(db)
-  expect(() => roundTrip({ ...db, players: [{ ...db.players[0], goals: ['X99'] }] })).toThrow()
+  expect(roundTrip({ ...db, players: [{ ...db.players[0], goals: ['X99'] }] }).players![0].goals).toEqual([]) // unknown Schlüsselelement dropped
   expect(() => roundTrip({ ...db, sessions: [{ ...db.sessions[0], attendance: ['nobody'] }] })).toThrow()
-  const bad = structuredClone(db.plans[0])
-  bad.weeks[0].trainings = [['X99']]
-  expect(() => roundTrip({ ...db, plans: [bad] })).toThrow()
+  const old = structuredClone(db.plans[0])
+  old.weeks[0].trainings = [['X99', 'A04']]
+  expect(roundTrip({ ...db, plans: [old] }).plans![0].weeks[0].trainings).toEqual([['A04']])
   expect(() => roundTrip(sample())).not.toThrow() // backups without team/plans stay valid
 })
 
@@ -334,6 +339,22 @@ test('line-up: a player holds one slot; removing a player clears line-ups and at
   expect(gameTitle({ id: 'g', opponent: 'Chur', lineup: {} })).toBe('Heim gegen Chur')
 })
 
+test('import drops Schlüsselelemente the app no longer has instead of rejecting the file', () => {
+  const db = sample()
+  const gone = { ...db, drills: [drill({ elements: ['U02', 'X99'] })], collections: [], players: [{ id: 'p', name: 'P', position: 'F' as const, goals: ['X99', 'U02'] }] }
+  const out = validateDb(JSON.parse(JSON.stringify(gone)))
+  expect(out.drills[0].elements).toEqual(['U02'])
+  expect(out.players![0].goals).toEqual(['U02'])
+})
+
+test('backups from before the EF renumbering are converted', () => {
+  const old = { ...sample(), drills: [drill({ categories: ['EF04', 'EF03', 'EF10'], primary: 'EF10', elements: ['E01', 'D17'] })], collections: [] }
+  const d = validateDb(JSON.parse(JSON.stringify(old))).drills[0]
+  expect([d.categories, d.primary, d.elements]).toEqual([['EF03', 'EF09'], 'EF09', ['D17']])
+  const now = { ...sample(), drills: [drill({ categories: ['EF04'], primary: 'EF04' })], collections: [] }
+  expect(validateDb(JSON.parse(JSON.stringify(now))).drills[0].categories).toEqual(['EF04']) // current ids stay
+})
+
 test('imported drills: source must be http(s), image https or an inline image', () => {
   const ok = (d: Partial<Drill>) => () => validateDb({ ...sample(), drills: [drill(d)], collections: [] })
   expect(ok({ source: 'https://www.mobilesport.ch/?p=1335', image: 'https://www.mobilesport.ch/a.jpg' })).not.toThrow()
@@ -341,4 +362,58 @@ test('imported drills: source must be http(s), image https or an inline image', 
   expect(ok({ source: 'javascript:alert(1)' })).toThrow('Quelle')
   expect(ok({ image: 'http://example.com/a.jpg' })).toThrow('Bild')
   expect(ok({ image: 'data:text/html;base64,PHNjcmlwdD4=' })).toThrow('Bild')
+})
+
+test('Posten get a zone by their number unless one is chosen; unknown zones are dropped on import', () => {
+  const s = sample().sessions[0]
+  const e = s.entries[0]
+  const ids = (list: typeof s.entries) => postenZones(list).map((z) => z.id)
+  expect(ids([e, e, e])).toEqual(['t1', 't2', 't3'])
+  expect(ids([e, { ...e, zone: 'q4' }])).toEqual(['h1', 'q4'])
+  expect(ids(Array(7).fill(e))).toEqual(Array(7).fill('all'))
+  const out = roundTrip({ ...sample(), sessions: [{ ...s, entries: [{ ...e, zone: 'q2' }, { ...e, id: 'x', zone: 'nope' }] }] })
+  expect(out.sessions[0].entries.map((x) => x.zone)).toEqual(['q2', undefined])
+})
+
+test('teams: old data moves into one team; a joint training shows for both teams, templates for all', () => {
+  const db = migrateDb({ ...sample(), sessions: [...sample().sessions, { id: 'tpl', title: 'Vorlage', template: true, entries: [] }], games: [{ id: 'g', opponent: 'Chur', lineup: {} }], plans: [newPlan('Plan')] })
+  const [a] = db.teams!
+  expect(db.teams!.map((t) => t.name)).toEqual(['Mein Team'])
+  expect([db.sessions[0].teams, db.sessions[1].teams, db.games![0].team, db.plans![0].team, db.players![0].teams]).toEqual([[a.id], undefined, a.id, a.id, [a.id]])
+  const b = { id: 'b', name: 'U11', color: '#e2001a' }
+  const both: Db = { ...db, teams: [a, b], sessions: [{ ...db.sessions[0], teams: [a.id, b.id] }, db.sessions[1], { id: 'only-a', teams: [a.id], title: 'A', entries: [] }] }
+  expect(teamView(both, b.id).sessions.map((s) => s.id)).toEqual(['s', 'tpl'])
+  expect(teamView(both, a.id).sessions.map((s) => s.id)).toEqual(['s', 'tpl', 'only-a'])
+  expect(teamView(both, b.id).players).toEqual([]) // the roster belongs to the first team
+})
+
+test('teams: what a page creates goes to the active team, existing records keep theirs', () => {
+  const db = migrateDb(sample())
+  const t = db.teams![0].id
+  const next = claimNew(db, { ...db, sessions: [...db.sessions, { id: 'new', title: 'Neu', entries: [] }, { id: 'tpl', title: 'V', template: true, entries: [] }], games: [{ id: 'g', opponent: 'X', lineup: {} }] }, 'other')
+  expect(next.sessions.map((s) => s.teams)).toEqual([[t], ['other'], undefined])
+  expect(next.games![0].team).toBe('other')
+  expect(claimNew(db, db, 'other')).toEqual(db)
+})
+
+test('teams: deleting a team removes what only it had and keeps joint trainings for the others', () => {
+  const db = migrateDb(sample())
+  const a = db.teams![0].id
+  const shared: Db = { ...db, teams: [...db.teams!, { id: 'b', name: 'U11', color: '#000' }],
+    sessions: [{ ...db.sessions[0], teams: [a, 'b'], attendance: [db.players![0].id] }, { id: 'x', title: 'Nur A', teams: [a], entries: [] }] }
+  expect(teamOnly(shared, a)).toEqual({ sessions: 1, games: 0, players: 20, plans: 0 })
+  const after = removeTeam(shared, a)
+  expect(after.teams!.map((t) => t.id)).toEqual(['b'])
+  expect(after.sessions.map((s) => [s.id, s.teams, s.attendance])).toEqual([['s', ['b'], []]])
+  expect(after.players).toEqual([])
+})
+
+test('teams: import keeps known team references, drops unknown ones and merges the team list', () => {
+  const db = migrateDb(sample())
+  const t = db.teams![0]
+  const file = { ...db, sessions: [{ ...db.sessions[0], teams: [t.id, 'gone'] }], games: [{ id: 'g', team: 'gone', opponent: 'X', lineup: {} }] }
+  const out = roundTrip(file)
+  expect([out.sessions[0].teams, out.games![0].team]).toEqual([[t.id], undefined])
+  const other = { ...emptyDb(), teams: [{ id: 'u11', name: 'U11', color: '#000' }] }
+  expect(mergeDb(db, other).db.teams!.map((x) => x.name)).toEqual(['Mein Team', 'U11'])
 })
