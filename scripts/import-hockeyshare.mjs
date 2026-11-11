@@ -40,12 +40,12 @@ const text = (html) => html
   .replace(/\r/g, '').split('\n').map((l) => l.replace(/[ \t ]+/g, ' ').trim()).join('\n').replace(/\n{3,}/g, '\n\n').trim()
 
 // HockeyShare category → SIHF Erscheinungsform, only where the meaning clearly matches.
-const EF = [[/^skating$/, 'EF03'], [/^(puck control|stickhandling)$/, 'EF05'], [/^passing$/, 'EF06'], [/^shooting$/, 'EF07'],
-  [/^power ?play$|^(\d) ?(on|v|-on-) ?(\d)$/, 'EF08'], [/^1 ?(on|v|-on-) ?1$|^battles?$|^(body )?checking$/, 'EF09'], [/^goalies?$|^goaltending$/, 'EF10']]
+const EF = [[/^skating$/, 'EF03'], [/^(puck control|stickhandling)$/, 'EF04'], [/^passing$/, 'EF05'], [/^shooting$/, 'EF06'],
+  [/^power ?play$|^(\d) ?(on|v|-on-) ?(\d)$/, 'EF07'], [/^1 ?(on|v|-on-) ?1$|^battles?$|^(body )?checking$/, 'EF08'], [/^goalies?$|^goaltending$/, 'EF09']]
 function sihf(category) {
   const c = category.toLowerCase()
   const odd = c.match(/^(\d) ?(?:on|v|-on-) ?(\d)$/)
-  if (odd && Number(odd[1]) <= Number(odd[2])) return c.match(/^1 ?(?:on|v|-on-) ?1$/) ? ['EF09'] : [] // 3 on 3 etc. is not an odd-man situation
+  if (odd && Number(odd[1]) <= Number(odd[2])) return c.match(/^1 ?(?:on|v|-on-) ?1$/) ? ['EF08'] : [] // 3 on 3 etc. is not an odd-man situation
   return EF.filter(([re]) => re.test(c)).map(([, id]) => id)
 }
 

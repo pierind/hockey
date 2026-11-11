@@ -58,8 +58,8 @@ export function parsePlan(md: string): SihfWeek[] {
 
 const parsed = parse(source)
 // The goalie Erscheinungsform is not part of the U12 plan; its label is from the SIHF «Manual Eishockey – Jugendliche» (Good Practice, S. 81).
-// It has no Schlüsselelemente. EF10 is an editorial id, like the others.
-export const categories: Category[] = [...parsed.categories, { id: 'EF10', label: 'Sich als Torhüter/in agil verschieben und zum Puck ausrichten sowie aktiv mitspielen' }]
+// It has no Schlüsselelemente. EF09 is an editorial id, like the others.
+export const categories: Category[] = [...parsed.categories, { id: 'EF09', label: 'Sich als Torhüter/in agil verschieben und zum Puck ausrichten sowie aktiv mitspielen' }]
 export const { elements, goals } = parsed
 export const sihfPlan = parsePlan(source)
 // The source names B01–B04 and H01 as the other accompanying off-ice goals, next to O01.

@@ -57,16 +57,16 @@ const usDate = (s) => { const [m, d, y] = s.match(/(\d\d)\/(\d\d)\/(\d\d(?:\d\d)
 
 // ---------- categories (SIHF Erscheinungsformen), only when the title clearly names the theme ----------
 const RULES = [
-  ['EF08', (t) => /power ?play|penalty kill|odd[- ]man/i.test(t) || [...t.matchAll(/\b(\d)\s*(?:v|vs\.?|-on-|on)\s*(\d)\b/gi)].some(([, a, b]) => +a > +b && +b > 0)],
-  ['EF09', (t) => /\b1\s*(?:v|vs\.?|-on-)\s*1\b|battle|angl(e|ing)\b|contact|checking|puck protection|\bgap\b|forecheck|backcheck|bumper/i.test(t)],
-  ['EF07', (t) => /shoot|shot\b|scor|rebound|\btip\b|tip-in|wrap-around|net[- ]front|deflect|breakaway|sniper/i.test(t)],
-  ['EF06', (t) => /pass|possession|keep-?away|support|regroup|breakout|give[- ]and[- ]go|weave|exchange|quarterback|outlet/i.test(t)],
-  ['EF05', (t) => /stickhandl|stick-handl|puck control|puck[- ]handling|underhandl|stick work|\bdekes?\b|dangle|fakes?\b|with (?:a )?(?:blue )?pucks?\b/i.test(t)],
-  ['EF04', (t) => /crossover|pivot|\bedges?\b|tight turn|\bstops?\b|stopping|c-cut|figure ?8/i.test(t)],
+  ['EF07', (t) => /power ?play|penalty kill|odd[- ]man/i.test(t) || [...t.matchAll(/\b(\d)\s*(?:v|vs\.?|-on-|on)\s*(\d)\b/gi)].some(([, a, b]) => +a > +b && +b > 0)],
+  ['EF08', (t) => /\b1\s*(?:v|vs\.?|-on-)\s*1\b|battle|angl(e|ing)\b|contact|checking|puck protection|\bgap\b|forecheck|backcheck|bumper/i.test(t)],
+  ['EF06', (t) => /shoot|shot\b|scor|rebound|\btip\b|tip-in|wrap-around|net[- ]front|deflect|breakaway|sniper/i.test(t)],
+  ['EF05', (t) => /pass|possession|keep-?away|support|regroup|breakout|give[- ]and[- ]go|weave|exchange|quarterback|outlet/i.test(t)],
+  ['EF04', (t) => /stickhandl|stick-handl|puck control|puck[- ]handling|underhandl|stick work|\bdekes?\b|dangle|fakes?\b|with (?:a )?(?:blue )?pucks?\b/i.test(t)],
+  ['EF03', (t) => /crossover|pivot|\bedges?\b|tight turn|\bstops?\b|stopping|c-cut|figure ?8/i.test(t)],
   ['EF01', (t) => /balance|getting up|\babc[’']?s?\b|coordination|stance|marching|balloon|bending/i.test(t)],
   ['EF03', (t) => /skat|sprint|speed|agility|\btag\b|race|relay/i.test(t)],
 ]
-const classify = (title) => RULES.filter(([, ok]) => ok(title)).map(([id]) => id)
+const classify = (title) => [...new Set(RULES.filter(([, ok]) => ok(title)).map(([id]) => id))]
 
 // ---------- drills (one collection for the whole source; plan, age group etc. go into the context line) ----------
 const drills = new Map() // identical drills (same title, text and key points) from several sources are stored once
@@ -76,7 +76,7 @@ function add(src, d) {
   const id = `usah-${slug(d.title)}-${sha(key).slice(0, 6)}`
   counts[src] = (counts[src] ?? 0) + 1
   if (drills.has(id)) return id
-  const categories = d.goalie ? ['EF10'] : classify(d.title) // hints only, a classifier sets the final categories
+  const categories = d.goalie ? ['EF09'] : classify(d.title) // hints only, a classifier sets the final categories
   const description = [...d.paras, d.context, `Quelle: USA Hockey (${d.source})`].filter(Boolean).join('\n\n')
   drills.set(id, {
     id, title: d.title, description, keyPoints: d.keyPoints ?? [], categories, ...(categories[0] && { primary: categories[0] }), elements: [],

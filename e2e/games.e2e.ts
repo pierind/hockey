@@ -8,7 +8,7 @@ test('game line-up', async ({ page }) => {
   await page.getByRole('button', { name: 'Neues Spiel' }).click()
   await page.getByLabel('Gegner').fill('EHC Chur')
   await page.getByLabel('Gegner').blur()
-  await page.getByLabel('Ort').selectOption('away')
+  await page.getByRole('combobox', { name: 'Ort' }).selectOption('away')
   await page.getByLabel('Datum').fill('2026-10-18')
   await page.getByLabel('1. Sturm C').selectOption({ label: '9 Spieler/in 9' })
   await page.getByLabel('Tor Starter').selectOption({ label: '1 Spieler/in 1' })

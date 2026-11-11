@@ -11,9 +11,9 @@ import { oneCollection } from './one-collection.mjs'
 const SITE = 'https://video.hockeycanada.ca'
 const HUB = `${SITE}/en-ca/hockey-programs/drill-hub`
 const DATE = '2026-10-15T00:00:00.000Z' // the sources carry no edit dates; a constant keeps re-imports identical
-const SIHF = { Skating: 'EF03', 'Puck Control': 'EF05', Passing: 'EF06', Shooting: 'EF07', Scoring: 'EF07', 'Checking Drill': 'EF09' }
+const SIHF = { Skating: 'EF03', 'Puck Control': 'EF04', Passing: 'EF05', Shooting: 'EF06', Scoring: 'EF06', 'Checking Drill': 'EF08' }
 // PDF drills have no category, only an uppercase title: map the unambiguous words.
-const TITLE_SIHF = [[/SHOOT|SCORING/, 'EF07'], [/PASS/, 'EF06'], [/STICKHANDL|PUCK CONTROL|PUCK CARRY|OPEN ICE CARRY/, 'EF05'], [/CROSSOVER|C-CUT|T-PUSH|STRIDE|PIVOT|STOPPING|EDGE|GLID|SKATING/, 'EF03']]
+const TITLE_SIHF = [[/SHOOT|SCORING/, 'EF06'], [/PASS/, 'EF05'], [/STICKHANDL|PUCK CONTROL|PUCK CARRY|OPEN ICE CARRY/, 'EF04'], [/CROSSOVER|C-CUT|T-PUSH|STRIDE|PIVOT|STOPPING|EDGE|GLID|SKATING/, 'EF03']]
 
 let last = 0
 async function get(url) {

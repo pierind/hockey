@@ -1,11 +1,14 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { download } from './db'
 import { HelpButton } from './Help'
-import { CategoryFilter, DrillFinder, DrillSummary } from './Library'
-import { addEntries, blockMinutes, categoryCollections, clock, duplicateSession, filterSessions, fromTemplate, groupPlayers, monthKey, monthLabel, moveIndex, needs, timeline, toIcs, totalMinutes } from './model'
+import { CategoryFilter, DrillFinder, DrillSummary, Picture } from './Library'
+import { addEntries, blockMinutes, CHANGE_MINUTES, categoryCollections, clock, drillSections, duplicateSession, filterSessions, fromTemplate, groupPlayers, monthKey, monthLabel, moveIndex, needs, postenZones, timeline, ZONES, toIcs, totalMinutes } from './model'
 import type { Change } from './model'
+import { Rink } from './Rink'
+import { RunMode } from './RunMode'
 import { uid } from './scene'
-import type { Db, Drill, Session, SessionEntry } from './types'
+import type { Db, Drill, Player, Session, SessionEntry, TeamInfo } from './types'
 
 export const StatusBadge = ({ s }: { s: Session }) =>
   s.template ? <span className="status-badge template">▤ Vorlage</span>
@@ -17,7 +20,11 @@ export const CalendarButton = ({ db }: { db: Db }) =>
     ? <button onClick={() => download('eishockey-kalender.ics', 'text/calendar', toIcs(db.sessions, db.games ?? []))}>Kalender (.ics)</button>
     : null
 
-export function Sessions({ db, change, onEditEntry }: { db: Db; change: Change; onEditEntry: (sessionId: string, entry: SessionEntry) => void }) {
+// Coloured team names of a training; only worth showing once there is more than one team.
+export const TeamChips = ({ ids, teams }: { ids?: string[]; teams?: TeamInfo[] }) =>
+  (teams?.length ?? 0) > 1 ? <span className="team-chips">{teams!.filter((t) => ids?.includes(t.id)).map((t) => <span key={t.id} className="team-chip" style={{ '--team': t.color } as CSSProperties}>{t.name}</span>)}</span> : null
+
+export function Sessions({ db, players, team, change, onEditEntry }: { db: Db; players: Player[]; team: string; change: Change; onEditEntry: (sessionId: string, entry: SessionEntry) => void }) {
   const [openId, setOpenId] = useState<string | null>(null)
   const [q, setQ] = useState('')
   const [category, setCategory] = useState('')
@@ -26,7 +33,7 @@ export function Sessions({ db, change, onEditEntry }: { db: Db; change: Change; 
   const upd = (id: string, fn: (s: Session) => Session) =>
     change((db) => ({ ...db, sessions: db.sessions.map((s) => (s.id === id ? fn(s) : s)) }))
 
-  if (session) return <SessionEditor key={session.id} s={session} db={db} upd={(fn) => upd(session.id, fn)} onBack={() => setOpenId(null)} onEdit={(e) => onEditEntry(session.id, e)} />
+  if (session) return <SessionEditor key={session.id} s={session} db={db} players={players} team={team} upd={(fn) => upd(session.id, fn)} onBack={() => setOpenId(null)} onEdit={(e) => onEditEntry(session.id, e)} />
 
   // Templates first, then month folders in date order, undated last; past months start folded unless searching.
   const searching = !!(q.trim() || category || element)
@@ -76,6 +83,7 @@ export function Sessions({ db, change, onEditEntry }: { db: Db; change: Change; 
               {list.map((s) => (
                 <li key={s.id} className="row">
                   <StatusBadge s={s} />
+                  <TeamChips ids={s.teams} teams={db.teams} />
                   <button className="link" onClick={() => setOpenId(s.id)}>{s.title}</button>
                   <span>{s.date ?? 'ohne Datum'} · {s.entries.length} Übungen · {totalMinutes(s)} Min.</span>
                   <button className="ghost" onClick={() => change((db) => ({ ...db, sessions: [...db.sessions, duplicateSession(s)] }))}>Duplizieren</button>
@@ -90,9 +98,10 @@ export function Sessions({ db, change, onEditEntry }: { db: Db; change: Change; 
   )
 }
 
-function SessionEditor({ s, db, upd, onBack, onEdit }: { s: Session; db: Db; upd: (fn: (s: Session) => Session) => void; onBack: () => void; onEdit: (e: SessionEntry) => void }) {
+function SessionEditor({ s, db, players, team: active, upd, onBack, onEdit }: { s: Session; db: Db; players: Player[]; team: string; upd: (fn: (s: Session) => Session) => void; onBack: () => void; onEdit: (e: SessionEntry) => void }) {
   const [invalid, setInvalid] = useState<string[]>([]) // entries whose typed duration was rejected
   const [dragFrom, setDragFrom] = useState<number | null>(null)
+  const [run, setRun] = useState(false) // rink mode open
   const [finder, setFinder] = useState<{ replace?: string; category?: string } | null>(null) // open drill finder: add, or replace that entry
   const setEntry = (id: string, patch: Partial<SessionEntry>) => upd((s) => ({ ...s, entries: s.entries.map((e) => (e.id === id ? { ...e, ...patch } : e)) }))
   const move = (from: number, to: number) => upd((s) => ({ ...s, entries: moveIndex(s.entries, from, to) }))
@@ -100,7 +109,8 @@ function SessionEditor({ s, db, upd, onBack, onEdit }: { s: Session; db: Db; upd
   const plan = timeline(s)
   const span = (from: number, to: number) => `${clock(s.start!, from)}–${clock(s.start!, to)}`
   const n = needs(s)
-  const team = db.players ?? []
+  const team = players.filter((p) => s.teams?.some((t) => p.teams?.includes(t))) // a joint training lists the players of all its teams
+  const teams = db.teams ?? []
   const needLine = [n.players && `${n.players} Spieler/innen`, n.goalies && `${n.goalies} Torhüter/innen`, n.material.length && `Material: ${n.material.join(', ')}`]
     .filter(Boolean).join(' · ')
 
@@ -111,7 +121,20 @@ function SessionEditor({ s, db, upd, onBack, onEdit }: { s: Session; db: Db; upd
           <button className="ghost" onClick={onBack}>← Alle Trainings</button>
           <span className="spacer" />
           <HelpButton topic="sessions" />
-          <button onClick={() => print()}>Drucken / PDF</button>
+          <button className="icon-btn" aria-label="Drucken / PDF" title="Drucken / PDF" onClick={() => {
+            // The browser proposes the page title as the PDF file name.
+            const app = document.title
+            document.title = s.title || app
+            addEventListener('afterprint', () => { document.title = app }, { once: true })
+            print()
+          }}>
+            <svg viewBox="0 0 24 24" width={20} height={20} aria-hidden fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M12 11v6M9 14l3 3 3-3" />
+            </svg>
+          </button>
+          <button className="primary icon-btn" aria-label="Training starten" title="Training starten" disabled={!s.entries.length} onClick={() => setRun(true)}>
+            <svg viewBox="0 0 24 24" width={20} height={20} aria-hidden fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" /></svg>
+          </button>
         </div>
         <header className="session-head">
           <input className="title-input" aria-label="Titel" defaultValue={s.title} onBlur={(e) => {
@@ -138,6 +161,19 @@ function SessionEditor({ s, db, upd, onBack, onEdit }: { s: Session; db: Db; upd
               }} /> Vorlage
             </label>
           </div>
+          {!s.template && teams.length > 1 && (
+            <div className="row team-pick" role="group" aria-label="Teams des Trainings">
+              <span className="hint">Für</span>
+              {teams.map((t) => (
+                <label key={t.id} className="check" title={t.id === active ? 'Aktives Team: im Team-Wechsel oben ein anderes wählen' : undefined}>
+                  <input type="checkbox" checked={!!s.teams?.includes(t.id)} disabled={t.id === active} onChange={(e) => {
+                    const on = e.target.checked
+                    upd((s) => ({ ...s, teams: on ? [...(s.teams ?? []), t.id] : (s.teams ?? []).filter((x) => x !== t.id) }))
+                  }} /> <span className="team-chip" style={{ '--team': t.color } as CSSProperties}>{t.name}</span>
+                </label>
+              ))}
+            </div>
+          )}
           {needLine && <p className="needs">Benötigt: {needLine}</p>}
         </header>
         <div className="row add-bar">
@@ -212,6 +248,12 @@ function SessionEditor({ s, db, upd, onBack, onEdit }: { s: Session; db: Db; upd
                       if (ok) setEntry(e.id, { minutes: n })
                     }} /></label>
                     {invalid.includes(e.id) && <span className="problems">Ungültige Dauer, nicht übernommen.</span>}
+                    {entries.length > 1 && (
+                      <select aria-label={`Zone Posten ${entries.indexOf(e) + 1}`} value={e.zone ?? ''} onChange={(ev) => setEntry(e.id, { zone: ev.target.value || undefined })}>
+                        <option value="">Zone: automatisch ({postenZones(entries.map((x) => (x === e ? { ...x, zone: undefined } : x)))[entries.indexOf(e)].label})</option>
+                        {ZONES.map((z) => <option key={z.id} value={z.id}>{z.label}</option>)}
+                      </select>
+                    )}
                     {i > 0 && (
                       <label className="check">
                         <input type="checkbox" checked={!!e.parallel} onChange={(ev) => setEntry(e.id, { parallel: ev.target.checked || undefined })} /> Parallel (Posten)
@@ -241,12 +283,14 @@ function SessionEditor({ s, db, upd, onBack, onEdit }: { s: Session; db: Db; upd
                   <h3>{k + 1}. Posten-Block · {entries.length} Posten</h3>
                   <strong>{blockMinutes(entries)} Min.</strong>
                 </div>
+                <PostenMap entries={entries} />
                 <ol className="entries posten">{cards}</ol>
               </li>
             )
           })}
         </ol>
       </section>
+      {run && <RunMode s={s} onClose={() => setRun(false)} />}
       {finder && (
         <DrillFinder drills={db.drills} category={finder.category} inSession={s.entries.map((e) => e.drill.id)}
           {...(finder.replace
@@ -254,35 +298,91 @@ function SessionEditor({ s, db, upd, onBack, onEdit }: { s: Session; db: Db; upd
             : { title: 'Übungen hinzufügen', pickLabel: 'Hinzufügen', keepOpen: true, onPick: (d: Drill) => upd((s) => addEntries(s, [d])) })}
           onClose={() => setFinder(null)} />
       )}
-      <div className="print-only">
-        <h1>{s.title}</h1>
-        <p>{[s.date, s.start && span(0, total), `Total ${total} Min.`].filter(Boolean).join(' · ')}</p>
-        {needLine && <p>{needLine}</p>}
-        {team.length > 0 && (
-          <div className="posten-grid">
-            {groupPlayers(team.filter((p) => !s.attendance || s.attendance.includes(p.id))).map(([group, list]) => (
-              <p key={group}><strong>{group}:</strong> {list.map((p) => `${p.number ?? ''} ${p.name} (${p.position})`.trim()).join(', ')}</p>
-            ))}
-          </div>
-        )}
-        {s.notes && <p className="pre">{s.notes}</p>}
-        {plan.map(({ entries, from, to }, k) => (
-          <section key={entries[0].id} className="print-block">
-            <h2>{s.start && `${span(from, to)} · `}{k + 1}. {entries.length > 1
-              ? `Posten-Block · ${entries.length} Posten · ${blockMinutes(entries)} Min.`
-              : `${entries[0].drill.title} · ${entries[0].minutes} Min.`}</h2>
-            <div className={entries.length > 1 ? 'posten-grid' : undefined}>
-              {entries.map((e, j) => (
-                <article key={e.id}>
-                  {entries.length > 1 && <h3>Posten {j + 1}: {e.drill.title} · {e.minutes} Min.</h3>}
-                  <DrillSummary drill={e.drill} />
-                  {e.notes && <p className="pre"><strong>Notizen:</strong> {e.notes}</p>}
-                </article>
+      <div className="print-only sheet">
+        <header className="sheet-head">
+          {teams.length > 1 && <p className="sheet-teams">{teams.filter((t) => s.teams?.includes(t.id)).map((t) => t.name).join(' · ')}</p>}
+          <h1>{s.title}</h1>
+          <p>{[s.date && new Date(`${s.date}T00:00`).toLocaleDateString('de-CH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }), s.start && span(0, total), `Total ${total} Min.`].filter(Boolean).join(' · ')}
+            {plan.length > 1 && <small> (inkl. {plan.length - 1} × {CHANGE_MINUTES} Min. Wechsel zwischen den Blöcken)</small>}</p>
+          {needLine && <p>Benötigt: {needLine}</p>}
+          {s.notes && <p className="pre">{s.notes}</p>}
+        </header>
+        {plan.map(({ entries, from, to }, k) => entries.length === 1
+          ? <SheetDrill key={entries[0].id} e={entries[0]} label={`${k + 1}. ${entries[0].drill.title}`} time={s.start && span(from, to)} />
+          : (
+            <section key={entries[0].id} className="sheet-block">
+              <h2 className="sheet-title">
+                {s.start && <span className="sheet-time">{span(from, to)}</span>}
+                <span>{k + 1}. Posten-Block · {entries.length} Posten</span>
+                <span className="sheet-min">{blockMinutes(entries)} Min.</span>
+              </h2>
+              <PostenMap entries={entries} />
+              {/* rows of two, each kept on one page: page breaks inside a grid split the cards in half */}
+              {entries.filter((_, j) => j % 2 === 0).map((_, r) => (
+                <div key={r} className="sheet-posten">
+                  {entries.slice(2 * r, 2 * r + 2).map((e, j) => <SheetDrill key={e.id} e={e} label={`Posten ${2 * r + j + 1}: ${e.drill.title}`} />)}
+                </div>
               ))}
-            </div>
-          </section>
-        ))}
+            </section>
+          ))}
       </div>
     </>
+  )
+}
+
+// One drill on the training sheet for the assistant coaches: diagram and the labelled sections, no tags or author.
+function SheetDrill({ e, label, time }: { e: SessionEntry; label: string; time?: string | false }) {
+  const d = e.drill
+  const { text, notes } = drillSections(d.description)
+  const allNotes = [e.notes.trim(), ...notes].filter(Boolean)
+  const points = d.keyPoints.filter((k) => k.trim())
+  const need = [d.players && `${d.players} Spieler/innen`, d.goalies && `${d.goalies} Torhüter/innen`, d.material && `Material: ${d.material}`].filter(Boolean).join(' · ')
+  return (
+    <article className="sheet-drill">
+      <h3 className="sheet-title">
+        {time && <span className="sheet-time">{time}</span>}
+        <span>{label}</span>
+        <span className="sheet-min">{e.minutes} Min.</span>
+      </h3>
+      <div className="sheet-body">
+        <Picture drill={d} />
+        <div>
+          {need && <p className="sheet-need">{need}</p>}
+          {text && <><h4>Beschreibung</h4><p className="pre">{text}</p></>}
+          {points.length > 0 && <><h4>Coaching-Punkte</h4><ul>{points.map((k, i) => <li key={i}>{k}</li>)}</ul></>}
+          {allNotes.length > 0 && <><h4>Notizen</h4>{allNotes.map((n, i) => <p key={i} className="pre">{n}</p>)}</>}
+        </div>
+      </div>
+    </article>
+  )
+}
+
+// Where each Posten of a block takes place; Posten sharing a zone are listed together.
+function PostenMap({ entries }: { entries: SessionEntry[] }) {
+  const clip = useId()
+  const zones = postenZones(entries)
+  const groups = [...new Set(zones)].map((z) => ({ z, nums: zones.flatMap((x, i) => (x === z ? [i] : [])) }))
+  const short = (t: string, w: number) => (t.length > w / 0.75 ? `${t.slice(0, Math.floor(w / 0.75) - 1)}…` : t)
+  return (
+    <div className="posten-map">
+      <Rink template="full" aria-label="Posten auf dem Eis">
+        <clipPath id={clip}><rect width={60} height={30} rx={8.5} /></clipPath>
+        <g clipPath={`url(#${clip})`}>
+          {groups.map(({ z, nums }) => {
+            const [x, y, w, h] = z.rect
+            const cx = x + w / 2
+            return (
+              <g key={z.id}>
+                <rect x={x + 0.3} y={y + 0.3} width={w - 0.6} height={h - 0.6} rx={1.2} fill="rgb(12 116 180 / 0.1)" stroke="#0c74b4" strokeWidth={0.2} strokeDasharray="0.8 0.5" />
+                <text x={cx} y={y + h / 2 - nums.length * 0.95 + 1} textAnchor="middle" fill="#0a2342" fontWeight={700}>
+                  <tspan x={cx} fontSize={3}>{nums.map((n) => n + 1).join(' · ')}</tspan>
+                  {nums.map((n) => <tspan key={n} x={cx} dy={1.9} fontSize={1.3} fontWeight={600}>{short(entries[n].drill.title, w)}</tspan>)}
+                </text>
+              </g>
+            )
+          })}
+        </g>
+      </Rink>
+    </div>
   )
 }

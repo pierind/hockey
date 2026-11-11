@@ -15,6 +15,13 @@ test('coaches board: draw, erase, undo, keep after reload', async ({ page }) => 
     await page.mouse.up()
   }
 
+  // Vollbild: the rink fills the screen below one tool row and still takes drawings
+  await page.getByRole('button', { name: 'Vollbild', exact: true }).click()
+  const fullBox = (await board.boundingBox())!
+  expect(fullBox.width).toBeGreaterThan(page.viewportSize()!.width - 40)
+  await page.getByRole('button', { name: 'Vollbild beenden' }).click()
+  await expect(page.getByRole('heading', { name: 'Taktiktafel' })).toBeVisible()
+
   await draw(0.3)
   await page.getByRole('button', { name: 'Stift Rot' }).click()
   await draw(0.6)
@@ -44,4 +51,20 @@ test('coaches board: draw, erase, undo, keep after reload', async ({ page }) => 
   await page.reload()
   await page.getByRole('button', { name: 'Taktiktafel' }).click()
   await expect(page.getByRole('application').locator('polyline')).toHaveCount(2)
+})
+
+test('portrait iPad: the rink stands upright and strokes keep rink coordinates', async ({ page }) => {
+  await page.setViewportSize({ width: 820, height: 1180 })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Taktiktafel' }).click()
+  const board = page.getByRole('application')
+  await expect(board).toHaveAttribute('viewBox', '-1 -1 32 62')
+  const box = (await board.boundingBox())!
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.1) // near the top end = rink x small
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.2, { steps: 5 })
+  await page.mouse.up()
+  const [x, y] = (await board.locator('polyline').getAttribute('points'))!.split(' ')[0].split(',').map(Number)
+  expect(x).toBeLessThan(10)
+  expect(Math.abs(y - 15)).toBeLessThan(2) // middle of the width = rink centre line
 })

@@ -1,11 +1,61 @@
 import { mid, uid } from './scene'
 import { categories, elements, goals, sihfPlan } from './sihf'
 import { AGE_CLASSES, ROUTE_LABELS, SYMBOL_LABELS } from './types'
-import type { Collection, Db, Drill, Game, Item, PlanWeek, Player, Pt, SeasonPlan, Session, SessionEntry } from './types'
+import type { Collection, Db, Drill, Game, Item, PlanWeek, Player, Pt, SeasonPlan, Session, SessionEntry, TeamInfo } from './types'
 
 export type Change = (fn: (db: Db) => Db) => Promise<void>
 
-export const emptyDb = (): Db => ({ version: 1, drills: [], collections: [], sessions: [], players: dummyTeam(), plans: [], games: [] })
+export const emptyDb = (): Db => migrateDb({ version: 1, drills: [], collections: [], sessions: [], plans: [], games: [] })
+
+// Teams: every training, game, player and season plan belongs to at least one; the app always shows one team at a time.
+export const TEAM_COLORS = ['#0c74b4', '#e2001a', '#2f9e44', '#e8590c', '#7048e8', '#0a2342']
+export const newTeam = (teams: TeamInfo[], name = `Team ${teams.length + 1}`): TeamInfo => ({ id: uid(), name, color: TEAM_COLORS[teams.length % TEAM_COLORS.length] })
+type Owned = { id: string; teams?: string[]; team?: string }
+export const inTeam = (x: Owned, team: string) => (x.teams ? x.teams.includes(team) : x.team === team)
+// What a team sees: its trainings (templates are shared), games, players and plans.
+export const teamView = (db: Db, team: string): Db => ({
+  ...db,
+  sessions: db.sessions.filter((s) => s.template || inTeam(s, team)),
+  games: (db.games ?? []).filter((g) => inTeam(g, team)),
+  players: (db.players ?? []).filter((p) => inTeam(p, team)),
+  plans: (db.plans ?? []).filter((p) => inTeam(p, team)),
+})
+// Records added since `prev` without a team go to `team`: whatever a page creates lands in the team it shows.
+export function claimNew(prev: Db, next: Db, team: string): Db {
+  function claim<T extends Owned>(old: T[] | undefined, list: T[] | undefined, own: (x: T) => boolean, set: (x: T) => T) {
+    const ids = new Set((old ?? []).map((x) => x.id))
+    return list?.some((x) => !ids.has(x.id) && !own(x)) ? list.map((x) => (ids.has(x.id) || own(x) ? x : set(x))) : list
+  }
+  const many = (x: Owned) => !!x.teams?.length
+  return {
+    ...next,
+    sessions: claim(prev.sessions, next.sessions, (s) => !!s.template || many(s), (s) => ({ ...s, teams: [team] }))!,
+    players: claim(prev.players, next.players, many, (p) => ({ ...p, teams: [team] })),
+    games: claim(prev.games, next.games, (g) => !!g.team, (g) => ({ ...g, team })),
+    plans: claim(prev.plans, next.plans, (p) => !!p.team, (p) => ({ ...p, team })),
+  }
+}
+// Removes a team; trainings shared with another team stay there, everything only in this team is deleted.
+export function removeTeam(db: Db, team: string): Db {
+  const drop = (x: Owned) => (x.teams ? x.teams.length === 1 && x.teams[0] === team : x.team === team)
+  const players = (db.players ?? []).filter((p) => !drop(p))
+  const left = new Set(players.map((p) => p.id))
+  return {
+    ...db,
+    teams: (db.teams ?? []).filter((t) => t.id !== team),
+    sessions: db.sessions.filter((s) => s.template || !drop(s)).map((s) => ({
+      ...s, teams: s.teams?.filter((t) => t !== team), attendance: s.attendance?.filter((id) => left.has(id)),
+    })),
+    players: players.map((p) => ({ ...p, teams: p.teams?.filter((t) => t !== team) })),
+    games: (db.games ?? []).filter((g) => !drop(g)),
+    plans: (db.plans ?? []).filter((p) => !drop(p)),
+  }
+}
+// What only this team has, for the confirmation before removing it.
+export const teamOnly = (db: Db, team: string) => {
+  const only = (list: Owned[]) => list.filter((x) => (x.teams ? x.teams.length === 1 && x.teams[0] === team : x.team === team)).length
+  return { sessions: only(db.sessions.filter((s) => !s.template)), games: only(db.games ?? []), players: only(db.players ?? []), plans: only(db.plans ?? []) }
+}
 
 // Starting team: 20 placeholder players (2 G, 6 D, 12 F) split into two groups, renamed by the coach.
 export const dummyTeam = (): Player[] =>
@@ -52,6 +102,13 @@ export function setSlot(lineup: Record<string, string>, slot: string, player: st
   const next = Object.fromEntries(Object.entries(lineup).filter(([k, v]) => k !== slot && v !== player))
   return player ? { ...next, [slot]: player } : next
 }
+// Attendance per player over the trainings with recorded AWK, optionally within a date range (inclusive; a range drops undated trainings).
+export function attendance(sessions: Session[], from = '', to = '') {
+  const recorded = sessions.filter((s) => s.attendance && !s.template && (!(from || to) || (s.date && (!from || s.date >= from) && (!to || s.date <= to))))
+  const present = (id: string) => recorded.filter((s) => s.attendance!.includes(id)).length
+  return { total: recorded.length, present }
+}
+
 // Removes a player from the team, every attendance list and every line-up.
 export const removePlayer = (db: Db, id: string): Db => ({
   ...db,
@@ -134,12 +191,12 @@ export const migrateDrills = (db: Db): Db => ({
   drills: db.drills.map(migrateDrill),
   sessions: db.sessions.map((s) => ({ ...s, entries: s.entries.map((e) => ({ ...e, drill: migrateDrill(e.drill) })) })),
 })
-export const migrateDb = (db: Db): Db => ({
-  ...migrateDrills(db),
-  players: db.players ?? dummyTeam(),
-  plans: db.plans ?? [],
-  games: db.games ?? [],
-})
+// Data from before teams existed (and imported backups without teams) goes into the first team.
+export function migrateDb(db: Db): Db {
+  const teams = db.teams?.length ? db.teams : [newTeam([], 'Mein Team')]
+  const empty: Db = { version: 1, drills: [], collections: [], sessions: [] }
+  return { ...claimNew(empty, { ...migrateDrills(db), players: db.players ?? dummyTeam(), plans: db.plans ?? [], games: db.games ?? [] }, teams[0].id), teams }
+}
 
 // One read-only collection per Erscheinungsform, derived from the drills' categories so it never goes stale.
 export const categoryCollections = (db: Db): Collection[] =>
@@ -230,11 +287,12 @@ export function mergeDb(current: Db, incoming: Db) {
   const players = add(current.players ?? [], incoming.players ?? [], 'players', (p) => ({ ...p, name: `${p.name} (Import)` }))
   const plans = add(current.plans ?? [], incoming.plans ?? [], 'plans', (p) => ({ ...p, name: `${p.name} (Import)` }))
   const games = add(current.games ?? [], incoming.games ?? [], 'games', (g) => ({ ...g, opponent: `${g.opponent} (Import)` }))
-  return { db: { ...current, drills, collections, sessions, players, plans, games }, added, skipped }
+  const teams = [...(current.teams ?? []), ...(incoming.teams ?? []).filter((t) => !current.teams?.some((x) => x.id === t.id))]
+  return { db: { ...current, drills, collections, sessions, players, plans, games, teams }, added, skipped }
 }
 
 // New training from a template or an earlier training: fresh ids, no date, starts as a plan.
-export const fromTemplate = (s: Session): Session => ({ ...duplicateSession(s), title: s.title, date: undefined, template: undefined })
+export const fromTemplate = (s: Session): Session => ({ ...duplicateSession(s), title: s.title, date: undefined, template: undefined, teams: undefined })
 
 // Consecutive entries joined by `parallel` form one Posten-Block.
 export function blocks(s: Session): SessionEntry[][] {
@@ -244,6 +302,24 @@ export function blocks(s: Session): SessionEntry[][] {
 }
 // Changeover between consecutive exercises/blocks; rotating between Posten inside a block has none.
 export const CHANGE_MINUTES = 2
+
+// Posten areas in rink metres [x, y, w, h] (rink 60 × 30, see Rink.tsx): thirds end at the blue lines.
+const THIRDS: [string, number, number][] = [['links', 0, 22.5], ['Mitte', 22.5, 15], ['rechts', 37.5, 22.5]]
+export const ZONES: { id: string; label: string; rect: [number, number, number, number] }[] = [
+  { id: 'all', label: 'Ganzes Feld', rect: [0, 0, 60, 30] },
+  { id: 'h1', label: 'Hälfte links', rect: [0, 0, 30, 30] },
+  { id: 'h2', label: 'Hälfte rechts', rect: [30, 0, 30, 30] },
+  ...THIRDS.map(([n, x, w], i) => ({ id: `t${i + 1}`, label: `Drittel ${n}`, rect: [x, 0, w, 30] as [number, number, number, number] })),
+  ...[['oben links', 0, 0], ['oben rechts', 30, 0], ['unten links', 0, 15], ['unten rechts', 30, 15]].map(([n, x, y], i) =>
+    ({ id: `q${i + 1}`, label: `Viertel ${n}`, rect: [x, y, 30, 15] as [number, number, number, number] })),
+  ...['oben', 'unten'].flatMap((v, r) => THIRDS.map(([n, x, w], i) =>
+    ({ id: `s${3 * r + i + 1}`, label: `Sechstel ${n} ${v}`, rect: [x, 15 * r, w, 15] as [number, number, number, number] }))),
+]
+export const ZONE_IDS = new Set(ZONES.map((z) => z.id))
+const AUTO_ZONES = [[], ['all'], ['h1', 'h2'], ['t1', 't2', 't3'], ['q1', 'q2', 'q3', 'q4'], ['s1', 's2', 's3', 's4', 's5'], ['s1', 's2', 's3', 's4', 's5', 's6']]
+// Zone of each Posten in a block: the chosen one, else by the number of Posten (more than 6 share the whole rink).
+export const postenZones = (entries: SessionEntry[]) =>
+  entries.map((e, i) => ZONES.find((z) => z.id === (e.zone ?? AUTO_ZONES[entries.length]?.[i] ?? 'all'))!)
 // Every group visits every Posten, so a block takes the sum: the time each player spends at each exercise.
 export const blockMinutes = (b: SessionEntry[]) => b.reduce((sum, e) => sum + e.minutes, 0)
 
@@ -257,6 +333,20 @@ export function timeline(s: Session) {
   })
 }
 export const totalMinutes = (s: Session) => timeline(s).at(-1)?.to ?? 0
+// Drill text for reading: without the metadata paragraphs the import scripts append (source, groups, age, links); the editor keeps them.
+const META = /^(Quelle|Gruppen|Kategorie|Category|Alter|Posted by|Video|Animation|Drill PDF|Übung PDF):|^https?:\/\/\S+$/
+export const drillText = (description: string) => description.split('\n\n').filter((p) => !META.test(p.trim())).join('\n\n').trim()
+// Training sheet: the notes paragraphs of imported drills («Notes: …») go under Notizen instead of the description.
+const NOTE = /^(Notes?|Bemerkung|Comments):\s*/i
+export function drillSections(description: string) {
+  const parts = drillText(description).split('\n\n').map((p) => p.trim()).filter(Boolean)
+  return { text: parts.filter((p) => !NOTE.test(p)).join('\n\n'), notes: parts.filter((p) => NOTE.test(p)).map((p) => p.replace(NOTE, '')) }
+}
+
+// Rink mode steps: a single drill is one step; a Posten-Block is one step per rotation, all Posten shown together,
+// each rotation getting an equal share of the block so the run takes as long as the plan.
+export const runSteps = (s: Session) =>
+  blocks(s).flatMap((entries) => entries.map((_, r) => ({ entries, rotation: entries.length > 1 ? r + 1 : 0, minutes: blockMinutes(entries) / entries.length })))
 // 'HH:MM' plus minutes, wrapping at midnight.
 export function clock(start: string, minutes: number) {
   const [h, m] = start.split(':').map(Number)
@@ -373,6 +463,19 @@ const STYLES: string[] = Object.keys(ROUTE_LABELS)
 const RINKS = ['full', 'half', 'zone']
 const CATEGORY_IDS = new Set(categories.map((c) => c.id))
 const ELEMENT_IDS = new Set(elements.map((e) => e.id))
+// Backups from before the renumbering (2026-11-01): «Schlittschuhe steuern» (EF04, its element E01 is now D17) merged into EF03,
+// EF05–EF10 moved down by one. Element ids that no longer exist are dropped instead of rejecting the file.
+const OLD_EF: Record<string, string> = { EF04: 'EF03', EF05: 'EF04', EF06: 'EF05', EF07: 'EF06', EF08: 'EF07', EF09: 'EF08', EF10: 'EF09' }
+const knownElements = (ids: string[], known: Set<string> = ELEMENT_IDS) => [...new Set(ids.map((e) => (e === 'E01' ? 'D17' : e)))].filter((e) => known.has(e))
+// shortcut: an old backup is recognised by EF10 or E01; one using neither keeps its EF ids. Drop once no old backups exist.
+function renumberOld(drills: Obj[]) {
+  const ids = drills.flatMap((d) => [...(strs(d.categories) ? d.categories : []), ...(strs(d.elements) ? d.elements : []), d.primary])
+  if (!ids.includes('EF10') && !ids.includes('E01')) return
+  for (const d of drills) {
+    if (strs(d.categories)) d.categories = [...new Set(d.categories.map((c) => OLD_EF[c] ?? c))]
+    if (isStr(d.primary)) d.primary = OLD_EF[d.primary] ?? d.primary
+  }
+}
 
 const isObj = (v: unknown): v is Obj => typeof v === 'object' && v !== null && !Array.isArray(v)
 const isStr = (v: unknown): v is string => typeof v === 'string'
@@ -400,7 +503,8 @@ function checkDrill(d: unknown, w: string) {
   need(strs(d.categories) && d.categories.every((c) => CATEGORY_IDS.has(c)), `${w}: unbekannte Erscheinungsform`)
   const cats = d.categories
   need(opt(d.primary, (p) => cats.includes(p as string)), `${w}: ungültiger Hauptfokus`)
-  need(strs(d.elements) && d.elements.every((e) => ELEMENT_IDS.has(e)), `${w}: unbekanntes Schlüsselelement`)
+  need(strs(d.elements), `${w}: Felder fehlen`)
+  d.elements = knownElements(d.elements)
   need(opt(d.ages, (a) => strs(a) && a.every((x) => AGE_CLASSES.includes(x))), `${w}: unbekannte Altersklasse`)
   need(opt(d.minutes, (m) => isNum(m) && m >= 0), `${w}: ungültige Dauer`)
   need(opt(d.players, (m) => isNum(m) && m >= 0) && opt(d.goalies, (m) => isNum(m) && m >= 0) && opt(d.material, isStr), `${w}: ungültige Angaben zu Spieler/innen oder Material`)
@@ -417,6 +521,7 @@ export function validateDb(x: unknown): Db {
   need(isObj(x), 'Keine gültige Backup-Datei')
   need(x.version === 1, `Unbekannte Backup-Version: ${String(x.version)}`)
   need(Array.isArray(x.drills) && Array.isArray(x.collections) && Array.isArray(x.sessions), 'Backup unvollständig')
+  renumberOld([...x.drills, ...x.sessions.flatMap((s) => (isObj(s) && Array.isArray(s.entries) ? s.entries.map((e) => (isObj(e) ? e.drill : null)) : []))].filter(isObj))
   x.drills.forEach((d, i) => checkDrill(d, `Übung ${i + 1}`))
   const drillIds = new Set(x.drills.map((d: Obj) => d.id))
   need(drillIds.size === x.drills.length, 'Doppelte Übungs-IDs')
@@ -428,15 +533,19 @@ export function validateDb(x: unknown): Db {
     need(isObj(s) && isStr(s.id) && isStr(s.title) && opt(s.date, isStr) && opt(s.final, (f) => typeof f === 'boolean') && opt(s.notes, isStr) && opt(s.template, (t) => typeof t === 'boolean') && opt(s.start, (t) => isStr(t) && /^\d{2}:\d{2}$/.test(t)) && Array.isArray(s.entries), `Training ${i + 1}: Felder fehlen`)
     s.entries.forEach((e, j) => {
       const w = `Training ${i + 1}, Eintrag ${j + 1}`
-      need(isObj(e) && isStr(e.id) && isNum(e.minutes) && e.minutes >= 0 && isStr(e.notes) && opt(e.parallel, (b) => typeof b === 'boolean'), `${w}: Felder fehlen`)
+      need(isObj(e) && isStr(e.id) && isNum(e.minutes) && e.minutes >= 0 && isStr(e.notes) && opt(e.parallel, (b) => typeof b === 'boolean') && opt(e.zone, isStr), `${w}: Felder fehlen`)
+      if (e.zone !== undefined && !ZONE_IDS.has(e.zone as string)) delete e.zone // unknown zone: placed automatically
       checkDrill(e.drill, w)
     })
     need(unique(s.entries.map((e: Obj) => e.id)), `Training ${i + 1}: doppelte Eintrags-IDs`)
   })
   need(opt(x.players, Array.isArray) && opt(x.plans, Array.isArray), 'Backup unvollständig')
   const players = (x.players ?? []) as unknown[]
-  players.forEach((p, i) =>
-    need(isObj(p) && isStr(p.id) && isStr(p.name) && opt(p.number, isNum) && ['F', 'D', 'G'].includes(p.position as string) && opt(p.group, isStr), `Spieler/in ${i + 1}: Felder fehlen`))
+  players.forEach((p, i) => {
+    if (isObj(p) && strs(p.goals)) p.goals = knownElements(p.goals)
+    need(isObj(p) && isStr(p.id) && isStr(p.name) && opt(p.number, isNum) && ['F', 'D', 'G'].includes(p.position as string) && opt(p.group, isStr)
+      && opt(p.goals, (g) => strs(g) && g.every((e) => ELEMENT_IDS.has(e))) && opt(p.notes, (n) => Array.isArray(n) && n.every((x) => isObj(x) && isStr(x.date) && isStr(x.text))), `Spieler/in ${i + 1}: Felder fehlen`)
+  })
   const playerIds = new Set(players.map((p) => (p as Obj).id))
   x.sessions.forEach((s: Obj, i) => need(opt(s.attendance, (a) => strs(a) && a.every((id) => playerIds.has(id))), `Training ${i + 1}: Anwesenheit verweist auf unbekannte Spieler/in`))
   need(opt(x.games, Array.isArray), 'Backup unvollständig')
@@ -446,14 +555,29 @@ export function validateDb(x: unknown): Db {
       && isObj(g.lineup) && Object.entries(g.lineup).every(([k, v]) => SLOT_IDS.has(k) && playerIds.has(v)), `Spiel ${i + 1}: Felder fehlen oder ungültige Aufstellung`))
   const known = new Set([...ELEMENT_IDS, ...goals.map((g) => g.id)])
   const codes = (v: unknown) => strs(v) && v.every((c) => known.has(c))
+  const keep = (v: unknown) => (strs(v) ? knownElements(v, known) : v)
   ;((x.plans ?? []) as unknown[]).forEach((p, i) => {
     const w = `Saisonplan ${i + 1}`
     need(isObj(p) && isStr(p.id) && isStr(p.name) && Array.isArray(p.weeks), `${w}: Felder fehlen`)
-    p.weeks.forEach((k: unknown, j) =>
+    p.weeks.forEach((k: unknown, j) => {
+      if (isObj(k)) Object.assign(k, { trainings: Array.isArray(k.trainings) ? k.trainings.map(keep) : k.trainings, offIce: keep(k.offIce), personality: keep(k.personality) })
       need(isObj(k) && isStr(k.id) && isStr(k.phase) && isNum(k.week) && opt(k.month, isStr) && opt(k.monday, isStr) && opt(k.special, isStr)
         && Array.isArray(k.trainings) && k.trainings.every(codes) && codes(k.offIce) && codes(k.personality) && opt(k.notes, isStr) && opt(k.breakAfter, isStr),
-      `${w}, Woche ${j + 1}: ungültig`))
+      `${w}, Woche ${j + 1}: ungültig`)
+    })
   })
+  // Teams: references to teams the file does not contain are dropped; those records then go to the active team.
+  need(opt(x.teams, (t) => Array.isArray(t) && t.every((k) => isObj(k) && isStr(k.id) && isStr(k.name) && isStr(k.color))), 'Teams ungültig')
+  const teamIds = new Set(((x.teams ?? []) as Obj[]).map((t) => t.id))
+  need(teamIds.size === ((x.teams ?? []) as unknown[]).length, 'Doppelte IDs')
+  for (const r of [...x.sessions, ...players] as Obj[]) {
+    need(opt(r.teams, strs), 'Ungültige Team-Zuordnung')
+    if (r.teams) r.teams = (r.teams as string[]).filter((t) => teamIds.has(t))
+  }
+  for (const r of [...games, ...((x.plans ?? []) as unknown[])] as Obj[]) {
+    need(opt(r.team, isStr), 'Ungültige Team-Zuordnung')
+    if (r.team !== undefined && !teamIds.has(r.team)) delete r.team
+  }
   need(unique(x.collections.map((c: Obj) => c.id)) && unique(x.sessions.map((s: Obj) => s.id)) && playerIds.size === players.length && unique(games.map((g) => (g as Obj).id)), 'Doppelte IDs')
   return x as unknown as Db
 }

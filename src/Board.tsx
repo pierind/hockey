@@ -2,7 +2,7 @@ import { memo, useEffect, useRef, useState } from 'react'
 import type { PointerEvent } from 'react'
 import { load, store } from './db'
 import { HelpButton } from './Help'
-import { Rink } from './Rink'
+import { fromUpright, Rink } from './Rink'
 import { commit, dist, initHistory, redo, undo } from './scene'
 import type { Pt, RinkTemplate } from './types'
 
@@ -31,6 +31,14 @@ export function Board() {
   const [tool, setTool] = useState<'pen' | 'eraser'>('pen')
   const [color, setColor] = useState(COLORS[0][0])
   const [loaded, setLoaded] = useState(false)
+  const [full, setFull] = useState(false) // board covers the whole screen, app bar hidden
+  const [upright, setUpright] = useState(() => matchMedia('(orientation: portrait)').matches) // portrait iPad: rink turned upright, twice as big
+  useEffect(() => {
+    const m = matchMedia('(orientation: portrait)')
+    const on = () => setUpright(m.matches)
+    m.addEventListener('change', on)
+    return () => m.removeEventListener('change', on)
+  }, [])
   const svg = useRef<SVGSVGElement>(null)
   const gesture = useRef<{ pointerId: number; stroke?: Stroke } | null>(null)
   const penUsed = useRef(false) // palm rejection: after the first Apple Pencil touch, fingers no longer draw
@@ -46,7 +54,8 @@ export function Board() {
 
   function toRink(e: { clientX: number; clientY: number }): Pt {
     const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(svg.current!.getScreenCTM()!.inverse())
-    return [Math.round(p.x * 100) / 100, Math.round(p.y * 100) / 100]
+    const [x, y] = upright ? fromUpright([p.x, p.y]) : [p.x, p.y]
+    return [Math.round(x * 100) / 100, Math.round(y * 100) / 100]
   }
 
   function onPointerDown(e: PointerEvent<SVGSVGElement>) {
@@ -87,11 +96,17 @@ export function Board() {
     setPreview(null)
   }
 
+  function toggleFull() {
+    setFull(!full)
+    // Also hides the browser bars where allowed (desktop, iPad Safari 16.4+); the CSS overlay works without it.
+    if (!full) document.documentElement.requestFullscreen?.().catch(() => {})
+    else if (document.fullscreenElement) document.exitFullscreen().catch(() => {})
+  }
+
   return (
-    <section className="board">
+    <section className={full ? 'board full' : 'board'}>
       <div className="row board-tools" role="toolbar" aria-label="Taktiktafel">
-        <h2>Taktiktafel</h2>
-        <HelpButton topic="board" />
+        {!full && <><h2>Taktiktafel</h2><HelpButton topic="board" /></>}
         <div className="row" role="group" aria-label="Stift">
           {COLORS.map(([c, name]) => (
             <button key={c} aria-label={`Stift ${name}`} aria-pressed={tool === 'pen' && color === c} onClick={() => { setTool('pen'); setColor(c) }}>
@@ -106,9 +121,11 @@ export function Board() {
         <select aria-label="Feldvorlage" value={board.rink} onChange={(e) => setHist((h) => commit(h, { ...h.present, rink: e.target.value as RinkTemplate }))}>
           {TEMPLATES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </select>
+        <span className="spacer" />
+        <button className={full ? 'primary' : ''} onClick={toggleFull}>{full ? 'Vollbild beenden' : 'Vollbild'}</button>
       </div>
       <div className="board-canvas">
-        <Rink ref={svg} template={board.rink} role="application" aria-label="Taktiktafel: mit Finger, Stift oder Maus zeichnen"
+        <Rink ref={svg} template={board.rink} upright={upright} style={full ? { height: '100%' } : undefined} role="application" aria-label="Taktiktafel: mit Finger, Stift oder Maus zeichnen"
           onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel}>
           {board.strokes.map((s, i) => <StrokeLine key={i} s={s} />)}
         </Rink>

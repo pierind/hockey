@@ -134,7 +134,7 @@ details.card > :not(summary) { margin: 10px 14px; }
 .toolbar { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; box-shadow: var(--shadow); position: sticky; top: 0; z-index: 2; }
 .toolbar h1 { margin-right: 4px; }
 .editor { display: grid; grid-template-columns: 260px minmax(0, 1fr) 370px; gap: 18px; align-items: start; margin-top: 14px; }
-.palette { display: grid; gap: 3px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px; box-shadow: var(--shadow); position: sticky; top: 76px; }
+.palette { display: grid; gap: 3px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px; box-shadow: var(--shadow); position: sticky; top: 76px; box-sizing: border-box; max-height: calc(100dvh - 108px); overflow-y: auto; overscroll-behavior: contain; } /* unscrolled it starts 92px down; keeps 16px free below */
 .palette button { display: flex; gap: 10px; align-items: center; text-align: left; font-size: 0.82rem; border-color: transparent; padding: 5px 8px; }
 .palette button:hover { background: var(--ice); border-color: transparent; }
 .palette button[aria-pressed='true'] { background: var(--accent-soft); border-color: var(--accent); }
@@ -179,6 +179,7 @@ label.check { display: flex; gap: 8px; align-items: baseline; font-size: 0.88rem
 
 /* Training editor, pilot of the cleaner look: one header card, quiet secondary buttons, numbered entries. */
 button.ghost { background: transparent; border-color: transparent; }
+button.icon-btn { display: inline-flex; align-items: center; justify-content: center; padding: 7px; line-height: 0; }
 button.ghost:hover { background: var(--accent-soft); border-color: transparent; color: var(--accent-ink); }
 button.danger { color: var(--danger); }
 button.danger:hover { background: #fdecea; color: var(--danger); }
@@ -198,6 +199,29 @@ label.field input { color: var(--ink); }
 .entry .minutes input { width: 64px; margin-left: 4px; }
 .session .entry > .row:first-child { border-bottom: 0; margin-bottom: 0; padding-bottom: 4px; }
 .session .entry-actions { margin: 0 0 10px 30px; gap: 2px; }
+
+/* Rink mode: the training runs full screen on the iPad, big picture, big timer, big buttons. */
+.run { position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; background: var(--ice); overscroll-behavior: none; }
+.run-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; background: var(--navy); color: #fff; border-bottom: 3px solid var(--red); }
+.run-bar button { min-height: 48px; min-width: 48px; font-size: 1.05rem; touch-action: manipulation; }
+.run-bar button.ghost { color: #fff; }
+.run-bar button.ghost:hover { background: var(--navy-2); color: #fff; }
+.run-pos { font-weight: 700; color: #c4d6ea; font-variant-numeric: tabular-nums; }
+.run-timer { font-size: 2.2rem; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 4.5ch; text-align: center; }
+.run-timer.over { color: #ff8a95; }
+.run-body { flex: 1; min-height: 0; overflow: auto; padding: 12px 16px; touch-action: pan-y; }
+.run-rotation { margin: 0 0 8px; font-weight: 700; color: var(--accent-ink); }
+.run-drills { display: grid; gap: 14px; }
+.run-drills.posten { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+.run-drill { display: grid; grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr); gap: 16px; align-items: start; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow); }
+.run-drills.posten .run-drill { grid-template-columns: 1fr; }
+.run-drill > svg, .run-drill > .drill-image, .run-drill > .office-thumb { width: 100%; max-height: 62dvh; object-fit: contain; }
+.run-drill h2 { font-size: 1.5rem; margin: 0 0 8px; }
+.run-drill li { font-size: 1.1rem; margin-bottom: 6px; }
+.run-note { background: #fff8e1; border-left: 4px solid #fab219; padding: 8px 12px; border-radius: 6px; font-size: 1.05rem; }
+.run-next { margin: 0; padding: 10px 16px; background: var(--surface); border-top: 1px solid var(--line); color: var(--muted); font-weight: 600; }
+.run-board { flex: 1; min-height: 0; overflow: auto; padding: 8px 12px; }
+@media (max-width: 900px), (orientation: portrait) { .run-drill { grid-template-columns: 1fr; } }
 
 /* Drill finder dialog */
 .finder { box-sizing: border-box; width: min(1100px, 94vw); max-height: 90vh; border: 0; border-radius: 16px; padding: 0 24px 24px; box-shadow: 0 20px 50px rgb(10 35 66 / 0.3); color: var(--ink); background: var(--ice); }
@@ -232,6 +256,22 @@ label.field input { color: var(--ink); }
 .help-button { width: 24px; height: 24px; padding: 0; border-radius: 50%; font-size: 0.78rem; font-weight: 700; line-height: 1; color: var(--muted); }
 .help-button:hover { color: var(--accent-ink); border-color: var(--accent); }
 .app-actions .help-button { color: #fff; }
+/* Teams: the switch in the app bar and coloured name chips (--team set inline per team) */
+.team-switch { display: inline-flex; align-items: center; gap: 6px; }
+.team-switch::before { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--team); box-shadow: 0 0 0 2px rgb(255 255 255 / 0.6); }
+.team-switch select { background: transparent; color: #fff; border: 1px solid rgb(255 255 255 / 0.35); border-radius: 8px; padding: 6px 8px; font-weight: 600; max-width: 180px; }
+.team-switch option { color: var(--ink); }
+.team-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 0.78rem; font-weight: 600; color: var(--navy); white-space: nowrap; }
+.team-chip::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--team); }
+.team-pick { margin-top: 6px; }
+.player-teams { white-space: nowrap; }
+.player-teams .check { margin-right: 10px; }
+.team .player-teams input { width: auto; min-width: 0; }
+.team-chips { display: inline-flex; gap: 10px; }
+.list li.row > span.team-chips { margin-right: 0; }
+.team-head { margin-bottom: 4px; }
+.team-head .title-input { max-width: 320px; }
+.team-head input[type='color'] { width: 40px; height: 34px; padding: 2px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
 .help-dialog { max-width: 640px; border: 0; border-radius: 14px; padding: 20px 24px; box-shadow: 0 20px 50px rgb(10 35 66 / 0.3); color: var(--ink); }
 .help-dialog::backdrop { background: rgb(10 35 66 / 0.4); }
 .help-dialog h3 { margin-top: 0; }
@@ -271,6 +311,13 @@ section > .help-section { background: var(--surface); border: 1px solid var(--li
 .pen-dot { display: inline-block; width: 22px; height: 22px; border-radius: 50%; vertical-align: middle; }
 .board-canvas { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 8px; }
 .board-canvas svg { touch-action: none; max-height: calc(100dvh - 170px); cursor: crosshair; }
+/* Vollbild: fixed over the app bar; the rink takes all height below one tool row and keeps its aspect ratio. */
+.board.full { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; background: var(--ice); overscroll-behavior: none; }
+.board.full .board-tools { padding: 6px 8px; }
+.board.full .board-tools button { white-space: nowrap; }
+.board-tools .row { flex-wrap: nowrap; }
+.board.full .board-canvas { flex: 1; min-height: 0; margin: 0 8px 8px; padding: 4px; }
+.board.full .board-canvas svg { max-height: none; }
 
 /* Season plan and team */
 .phase { margin: 22px 0 8px; color: var(--navy-2); }
@@ -297,6 +344,8 @@ input.short { width: 110px; }
 section > .roster { margin: 10px 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
+.posten-map { max-width: 420px; margin: 8px 0; }
+.posten-map svg { border: 1px solid var(--line); border-radius: 8px; }
 .print-only { display: none; }
 .lineup { border-collapse: collapse; width: 100%; margin: 8px 0; }
 .lineup th, .lineup td { border: 1px solid #999; padding: 6px 8px; text-align: left; }
@@ -310,17 +359,44 @@ section > .roster { margin: 10px 0; }
   main, .app-bar-inner { padding-left: 16px; padding-right: 16px; }
   .editor, .summary, .fold-grid { grid-template-columns: 1fr; }
   .palette, .toolbar { position: static; }
+  .palette { max-height: none; }
   .app-actions { margin-left: 0; }
   .finder { width: 100vw; max-width: 100vw; max-height: 100dvh; border-radius: 0; padding: 0 16px 16px; }
   .tiles { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
   .session .entry-actions { margin-left: 0; }
 }
 @media print {
-  :root, body { background: #fff; }
+  @page { size: A4; margin: 12mm; }
+  :root, body { background: #fff; font-size: 9pt; }
+  * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   main { padding: 0; }
   .screen-only { display: none !important; }
   .print-only { display: block; }
-  article { break-inside: avoid; border-bottom: 1px solid #999; padding-bottom: 8px; }
-  .summary { grid-template-columns: 300px 1fr; }
-  .summary svg { border-color: #999; }
+
+  /* Training sheet: one card per drill, never split over two pages */
+  .sheet-head { border-bottom: 3px solid var(--red); padding-bottom: 8px; margin-bottom: 14px; }
+  .sheet-head h1 { font-size: 16pt; color: var(--navy); }
+  .sheet-head p { margin: 3px 0 0; color: var(--muted); }
+  .sheet-head .sheet-teams { margin: 0 0 2px; color: var(--accent); font-size: 7.5pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+  .sheet-head small { font-size: 7.5pt; }
+  .sheet-drill, .sheet-block { border: 1px solid var(--line); border-radius: 10px; margin: 0 0 10px; }
+  .sheet-drill { break-inside: avoid; overflow: hidden; }
+  .sheet-block > .sheet-title { border-radius: 9px 9px 0 0; break-after: avoid; }
+  .sheet-block > .posten-map { max-width: 11cm; margin: 8px auto 0; break-inside: avoid; break-after: avoid; }
+  .sheet-posten { display: flex; gap: 8px; padding: 8px 8px 0; break-inside: avoid; }
+  .sheet-posten:last-child { padding-bottom: 8px; }
+  .sheet-posten .sheet-drill { flex: 1 1 0; min-width: 0; margin: 0; }
+  .sheet-posten .sheet-drill:only-child { flex: 0 0 calc(50% - 4px); }
+  .sheet-posten .sheet-drill .sheet-title { background: var(--accent-soft); color: var(--navy); font-size: 9pt; }
+  .sheet-posten .sheet-body { grid-template-columns: 1fr; }
+  .sheet-title { display: flex; align-items: baseline; gap: 10px; margin: 0; padding: 5px 10px; background: var(--navy); color: #fff; font-size: 10pt; font-weight: 700; }
+  .sheet-time { font-variant-numeric: tabular-nums; font-weight: 600; opacity: 0.85; }
+  .sheet-min { margin-left: auto; white-space: nowrap; font-weight: 600; }
+  .sheet-body { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 12px; padding: 8px 10px 10px; align-items: start; }
+  .sheet-body > svg, .sheet-body > .drill-image, .sheet-body > .office-thumb { width: 100%; max-height: 9cm; object-fit: contain; break-inside: avoid; border: 1px solid var(--line); border-radius: 8px; box-sizing: border-box; }
+  .sheet-body h4 { margin: 8px 0 2px; color: var(--accent); font-size: 6.5pt; text-transform: uppercase; letter-spacing: 0.08em; }
+  .sheet-body h4:first-child { margin-top: 0; }
+  .sheet-body p { margin: 0 0 4px; }
+  .sheet-body ul { margin: 0; padding-left: 16px; }
+  .sheet-need { color: var(--muted); font-size: 7.5pt; }
 }
